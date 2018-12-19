@@ -16,6 +16,7 @@ class PointCloud:
         self.polygons = None
         self.train_tiles = {}
         self.test_tiles = {}
+        self.extension = '.las' #TODO Think how to handle different formats
 
     def get_name(self):
         return self.name
@@ -27,10 +28,11 @@ class PointCloud:
         self.tiles[name] = Tile(name, polygon=polygon, workspace=self.workspace)
 
     def create_new_tile(self, name, points):
+        filename = name + self.extension
         polygon = processing.boundary(points)
-        tile = Tile(name + '.las', polygon, self.workspace)
+        tile = Tile(filename, polygon, self.workspace)
         tile.store_new_tile(points)
-        self.add_tile(name, polygon)
+        self.add_tile(filename, polygon)
 
     def number_of_tiles(self):
         return len(self.tiles)
