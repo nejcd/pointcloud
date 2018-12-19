@@ -23,7 +23,6 @@ setup(
         'descartes'
     ],
     scripts=[
-        'scripts/main.py',
         'scripts/extract_classes.py',
         'scripts/multipolygon.py',
     ],
