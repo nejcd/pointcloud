@@ -1,7 +1,4 @@
-import sys, os
-# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# sys.path.append(BASE_DIR)
-
+import os
 import glob
 from pointcloud.pointcloud import PointCloud
 from pointcloud.utils import misc
@@ -143,10 +140,3 @@ class Project:
 
     def create_train_test_split(self, train=0.8, seed=800815):
         self.pointcloud.create_train_test_split(train=train, seed=seed)
-
-if __name__ == '__main__':
-    name = 'test_tile_27620_158050.las'
-    project = Project('tests')
-    project.create_pointcloud('tests')
-    # polygon = project.calculate_polygon_from_filename(name, 10, 3, 4)
-    # project.create_tile_and_add_to_point_cloud(name, polygon)

@@ -1,9 +1,12 @@
 import math
 import numpy as np
 from shapely.geometry import Polygon, MultiPolygon
+from matplotlib import pyplot
+from descartes.patch import PolygonPatch
 import matplotlib.pyplot as plt
 from pointcloud.utils.plyfile import PlyData, PlyElement
 from pointcloud.utils.eulerangles import euler2mat
+
 
 def calculate_polygon_from_filename(file_name, grid_size, x_pos, y_pos):
     """
@@ -98,7 +101,6 @@ def create_fish_net(bbox, size):
             n += 1
 
     return MultiPolygon([polygon for polygon in polygons])
-
 
 
 # ----------------------------------------
@@ -233,6 +235,10 @@ def draw_point_cloud(input_points, canvasSize=500, space=200, diameter=25,
     image = image / np.max(image)
     return image
 
+# -----------------------
+# Points Visualization
+# -----------------------
+
 
 def point_cloud_three_views(points):
     """ input points Nx3 numpy array (+y is up direction).
@@ -265,3 +271,24 @@ def pyplot_draw_volume(vol, output_filename):
     """
     points = volume_to_point_cloud(vol)
     pyplot_draw_point_cloud(points, output_filename)
+
+
+# -----------------------
+# Project Visualization
+# -----------------------
+
+
+def pyplot_project(multipolygon):
+    """
+    :param multipolygon:
+    :return:
+    """
+
+    fig = pyplot.figure()
+    ax = fig.add_subplot(121)
+
+    for polygon in multipolygon:
+        patch = PolygonPatch(polygon, facecolor='#6699cc', edgecolor='#ffffff', alpha=0.5, zorder=2)
+        ax.add_patch(patch)
+
+    pyplot.show()
