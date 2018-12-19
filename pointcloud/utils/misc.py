@@ -284,7 +284,7 @@ def pyplot_project(multipolygon):
     :return:
     """
 
-    fig = pyplot.figure()
+    fig = pyplot.figure(1, dpi=90)
     ax = fig.add_subplot(121)
 
     for polygon in multipolygon:
