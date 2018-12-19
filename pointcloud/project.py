@@ -77,8 +77,8 @@ class Project:
                       'num_point_clouds': len(self.pointclouds),
                       'workspace': self.workspace}
 
-        for pointcloud in self.pointclouds:
-            self.stats[pointcloud.get_name] = pointcloud.get_stats()
+        for name, pointcloud in self.pointclouds.items():
+            self.stats[name] = pointcloud.get_stats()
 
         return self.stats
 

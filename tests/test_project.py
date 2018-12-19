@@ -51,6 +51,16 @@ class ProjectTests(unittest.TestCase):
         bbox = project.get_project_bbox()
         print(bbox)
 
+    def test_get_stats(self):
+        project = Project(project_name, workspace=workspace, epsg=epsg)
+        pointcloud = project.add_new_pointcloud(point_cloud_name)
+
+        names_polygons = misc.get_names_and_polygons_in_workspace(workspace, settings={'step': 25, 'x_pos': 3, 'y_pos': 4})
+        for data in names_polygons:
+            pointcloud.add_tile(data['name'], data['polygon'])
+
+        stats = project.get_stats()
+        self.assertEqual({'name': 'Test', 'num_point_clouds': 1, 'workspace': 'test_data/', 'p1': {'area': 186.82999999999998, 'num_points': 21931, 'density': 117.38, 'tiles': 2}}, stats)
 
 
 if __name__ == '__main__':
