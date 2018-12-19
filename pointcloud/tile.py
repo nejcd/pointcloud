@@ -1,6 +1,8 @@
 import laspy
 import numpy as np
 from pointcloud.utils import processing
+from pointcloud.utils import misc
+
 
 class Tile:
     def __init__(self, filename, polygon=None, workspace='./'):
@@ -61,10 +63,7 @@ class Tile:
         return self.density
 
     def get_points(self):
-        file = laspy.file.File(self.workspace + self.filename, mode='r')
-        points = np.vstack((file.x, file.y, file.z, file.classification)).transpose()
-        file.close()
-        return points
+        return misc.get_points(self.workspace + self.filename)
 
     def calculate_tile_polygon_from_points(self):
         self.polygon = processing.boundary(self.get_points())

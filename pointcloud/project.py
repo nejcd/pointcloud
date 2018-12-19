@@ -1,31 +1,49 @@
 import os
-import glob
 from pointcloud.pointcloud import PointCloud
-from pointcloud.utils import misc
 from shapely.geometry import MultiPolygon
 import pickle
 from pathlib import Path
+import numpy as np
+import random
 
 
 class Project:
     ext = '.lp'
 
-    def __init__(self, project_name, epsg=None, workspace='./', pointcloud=None, labels=None):
+    def __init__(self, project_name, epsg=None, workspace='./'):
         """
-        :param labels:
         :param project_name:
         :param epsg: 
         :param workspace: 
         :param pointcloud: 
         """
-        self.labels = labels
-        self.epsg = epsg
-        self.workspace = workspace
-        self.pointcloud = pointcloud
         self.name = project_name
-        self.pointcloud = PointCloud(project_name, workspace, epsg)
+        self.workspace = workspace
+        self.pointclouds = {}
+        self.epsg = epsg
+        self.train_pointclouds = None
+        self.test_pointclouds = None
         self.stats = None
-        self.altclouds = {}
+
+    def add_new_pointcloud(self, name, folder=None):
+        """
+        Adds PointClouds to project
+        :param name:
+        :param folder:
+        :return:
+        """
+        if name is self.pointclouds:
+            raise ValueError('PointCloud with that name already exists')
+
+        if folder is None:
+            path = self.workspace
+        else:
+            path = self.workspace + folder
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+        self.pointclouds[name] = PointCloud(name, path, self.epsg)
+        return self.pointclouds[name]
 
     def get_name(self):
         """
@@ -33,98 +51,75 @@ class Project:
         """
         return self.name
 
-    def get_point_cloud(self):
+    def get_point_clouds(self):
         """
         :rtype: PointCloud
         """
-        return self.pointcloud
+        return self.pointclouds
 
-    def create_tile_and_add_to_point_cloud(self, tile_name, tile_polygon):
+    def get_point_cloud(self, point_cloud_name):
         """
-        :param tile_name:
-        :param tile_polygon:
+        :rtype: PointCloud
         """
-        if self.pointcloud is None:
-            raise UserWarning('Pointcloud not initialised, can not add tile')
-        self.pointcloud.add_tile(tile_name, tile_polygon)
+        if self.pointclouds[point_cloud_name] is None:
+            raise UserWarning('Point clouds {0} not set'.format(point_cloud_name))
 
-    def add_tiles_in_workspace(self, extension='las', polygon_from_filename_settings=None):
-        """
-        :param extension:
-        :param polygon_from_filename_settings:
-        """
-        files = glob.glob(self.workspace + "*." + extension)
-        if len(files) == 0:
-            raise UserWarning('No files in current workspace')
-        for file in files:
-            file_name = file.split('/')[-1]
-            if polygon_from_filename_settings is not None:
-                step, x_pos, y_pos = self.get_polygon_from_file_settings(polygon_from_filename_settings)
-                polygon = misc.calculate_polygon_from_filename(file_name, step, x_pos, y_pos)
-            else:
-                polygon = misc.calculate_polygon_from_file(file_name)
-
-            self.create_tile_and_add_to_point_cloud(file_name, polygon)
-
-    @staticmethod
-    def get_polygon_from_file_settings(settings):
-        """
-        :param settings:
-        :return:
-        """
-        try:
-            return settings['step'], settings['x_pos'], settings['y_pos']
-        except ValueError:
-            print('Not Valid Settings')
-
-    def calculate_tile_polygons_from_points(self):
-        self.pointcloud.calculate_tile_polygons_from_points()
-        self.reset_stats()
+        return self.pointclouds[point_cloud_name]
 
     def get_stats(self):
-        if self.stats is None:
-            self.stats = self.pointcloud.get_stats()
+        """
+        :return:
+        """
+        if self.stats is not None:
+            return self.stats
+
+        self.stats = {'name': self.name,
+                      'num_point_clouds': len(self.pointclouds),
+                      'workspace': self.workspace}
+
+        for pointcloud in self.pointclouds:
+            self.stats[pointcloud.get_name] = pointcloud.get_stats()
 
         return self.stats
 
     def reset_stats(self):
+        """
+        :return:
+        """
         self.stats = None
 
-    def get_intersected_points(self, geometry):
-        return self.pointcloud.get_intersected_points(geometry)
-
-    def add_new_altcloud(self, name_altcloud, subfolder, epsg):
-        if name_altcloud is self.altclouds:
-            raise ValueError('Alt PointCloud with that name already exists')
-
-        path = self.workspace + subfolder
-        if not os.path.exists(path):
-            os.makedirs(path)
-
-        self.altclouds[name_altcloud] = PointCloud(name_altcloud, path, epsg)
-        return self.altclouds[name_altcloud]
-
-    def get_all_altclouds(self):
-        return self.altclouds
-
-    def get_altcloud(self, name_altcloud):
-        if name_altcloud in self.altclouds:
-            return self.altclouds[name_altcloud]
-        return None
-
     def get_polygons(self):
-        multi = MultiPolygon([tile.get_polygon() for n, tile in self.pointcloud.get_tiles().items()])
-        return multi
+        """
+        Get polygons of all pointclouds and tiles
+        :return:
+        """
+        geometries = []
+        for name, pointcloud in self.pointclouds.items():
+            for n, tile in pointcloud.get_tiles().items():
+                geometries.append(tile.get_polygon())
+            print([tile.get_polygon() for n, tile in pointcloud.get_tiles().items()])
+        return MultiPolygon(geometries)
 
     def get_project_bbox(self):
+        """
+        Get BBOX around project area
+        :return:
+        """
         return self.get_polygons().bounds
 
     def can_load(self):
+        """
+        Is there saved project version
+        :return:
+        """
         my_file = Path(self.workspace + self.name + self.ext)
-        print(my_file)
         return my_file.is_file()
 
     def load(self):
+        """
+        Load saved project
+        :return:
+        """
         print('Loading project {0}'.format(self.name))
         f = open(self.workspace + self.name + self.ext, 'rb')
         tmp_dict = pickle.load(f)
@@ -133,10 +128,31 @@ class Project:
         self.__dict__.update(tmp_dict)
 
     def save(self):
+        """
+        Save project
+        :return:
+        """
         print('Saving project {0}'.format(self.name))
         f = open(self.workspace + self.name + self.ext, 'wb')
         pickle.dump(self.__dict__, f, 2)
         f.close()
 
     def create_train_test_split(self, train=0.8, seed=800815):
-        self.pointcloud.create_train_test_split(train=train, seed=seed)
+        """
+        Create train test split trough point clouds
+        :param train:
+        :param seed:
+        :return:
+        """
+        train_num = int(np.ceil(len(self.pointclouds) * train))
+        test_num = int(np.ceil(len(self.pointclouds) * (1 - train)))
+        if train_num + test_num != len(self.pointclouds):
+            diff = len(self.pointclouds) - (test_num + train_num)
+            test_num = test_num + diff
+
+        random.seed(seed)
+        keys = list(self.pointclouds.keys())
+        random.shuffle(keys)
+        self.train_pointclouds = keys[0:train_num]
+        self.test_pointclouds = keys[train_num:train_num + test_num]
+        return self.train_pointclouds, self.test_pointclouds

@@ -6,6 +6,9 @@ from descartes.patch import PolygonPatch
 import matplotlib.pyplot as plt
 from pointcloud.utils.plyfile import PlyData, PlyElement
 from pointcloud.utils.eulerangles import euler2mat
+import glob
+import laspy
+from pointcloud.utils import processing
 
 
 def calculate_polygon_from_filename(file_name, grid_size, x_pos, y_pos):
@@ -24,7 +27,7 @@ def calculate_polygon_from_filename(file_name, grid_size, x_pos, y_pos):
         x_min = int(exploded[x_pos])
         y_min = int(exploded[y_pos])
     except IndexError:
-        print('Could not parse Filename for Polygon, check if x na y pos correct', exploded)
+        print('Could not parse Filename for Polygon, check if x na y pos correct')
 
     return Polygon([(x_min, y_min),
                     (x_min + grid_size, y_min),
@@ -32,12 +35,58 @@ def calculate_polygon_from_filename(file_name, grid_size, x_pos, y_pos):
                     (x_min, y_min + grid_size)])
 
 
-def calculate_polygon_from_file(file_name):
+def get_names_and_polygons_in_workspace(workspace, settings=None, extension='las', polygon_from_filename_settings=None):
     """
-    TODO Implement
-    :param file_name:
+    :param workspace: Path to workspace
+    :param settings: Dictionary keys: step, x_pos, y_pos
+    :param extension:
+    :param polygon_from_filename_settings:
+    :return:
     """
-    raise NotImplementedError('Feature not implemented yet')
+    files = glob.glob(workspace + "*." + extension)
+    out = []
+    if len(files) == 0:
+        raise UserWarning('No files in current workspace')
+    for file in files:
+        file_name = file.split('/')[-1]
+        if polygon_from_filename_settings is not None:
+            step, x_pos, y_pos = get_polygon_from_file_settings(settings)
+            polygon = calculate_polygon_from_filename(file_name, step, x_pos, y_pos)
+        else:
+            polygon = calculate_polygon_from_file(workspace + file_name)
+        out.append({'name': file_name, 'polygon': polygon})
+
+    return out
+
+
+def get_polygon_from_file_settings(settings):
+    """
+    :param settings:
+    :return:
+    """
+    try:
+        return settings['step'], settings['x_pos'], settings['y_pos']
+    except ValueError:
+        print('Not Valid Settings')
+
+
+def calculate_polygon_from_file(filepath):
+    """
+    :param filepath:
+    """
+    points = get_points(filepath)
+    return processing.boundary(points)
+
+
+def get_points(filepath):
+    """
+    :param filepath:
+    :return:
+    """
+    point_file = laspy.file.File(filepath, mode='r')
+    points = np.vstack((point_file.x, point_file.y, point_file.z, point_file.classification)).transpose()
+    point_file.close()
+    return points
 
 
 def calculate_tile_size_from_target_number_of_points(num_points, density, tile_type='grid'):
