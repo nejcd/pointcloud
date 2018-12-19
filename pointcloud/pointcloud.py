@@ -30,6 +30,7 @@ class PointCloud:
         polygon = processing.boundary(points)
         tile = Tile(name + '.las', polygon, self.workspace)
         tile.store_new_tile(points)
+        self.add_tile(name, polygon)
 
     def number_of_tiles(self):
         return len(self.tiles)
