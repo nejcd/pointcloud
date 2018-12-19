@@ -77,8 +77,8 @@ class Project:
                       'num_point_clouds': len(self.pointclouds),
                       'workspace': self.workspace}
 
-        for pointcloud in self.pointclouds:
-            self.stats[pointcloud.get_name] = pointcloud.get_stats()
+        for name, pointcloud in self.pointclouds.items():
+            self.stats[name] = pointcloud.get_stats()
 
         return self.stats
 
@@ -97,7 +97,6 @@ class Project:
         for name, pointcloud in self.pointclouds.items():
             for n, tile in pointcloud.get_tiles().items():
                 geometries.append(tile.get_polygon())
-            print([tile.get_polygon() for n, tile in pointcloud.get_tiles().items()])
         return MultiPolygon(geometries)
 
     def get_project_bbox(self):
@@ -120,7 +119,7 @@ class Project:
         Load saved project
         :return:
         """
-        print('Loading project {0}'.format(self.name))
+        print('\nLoading project {0}'.format(self.name))
         f = open(self.workspace + self.name + self.ext, 'rb')
         tmp_dict = pickle.load(f)
         f.close()
@@ -132,7 +131,7 @@ class Project:
         Save project
         :return:
         """
-        print('Saving project {0}'.format(self.name))
+        print('\nSaving project {0}'.format(self.name))
         f = open(self.workspace + self.name + self.ext, 'wb')
         pickle.dump(self.__dict__, f, 2)
         f.close()
