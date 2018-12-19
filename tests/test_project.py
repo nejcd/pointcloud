@@ -2,26 +2,55 @@ import unittest
 from shapely.geometry import Polygon
 from pointcloud.project import Project
 import pointcloud.utils.misc as misc
+from pointcloud.pointcloud import PointCloud
+from pointcloud.tile import Tile
+import numpy as np
 
-name = 'Test'
-workspace = '../tests'
+project_name = 'Test'
+point_cloud_name = 'p1'
+workspace = 'test_data/'
 epsg = '3912'
 metadata = 'Testing pointcloud'
-
 
 class ProjectTests(unittest.TestCase):
 
     def test_create(self):
-        project = Project(name, workspace=workspace, epsg=epsg)
-        misc.calculate_polygon_from_filename('test_data/test_tile_27620_158050.las', 10, 3, 4)
+        project = Project(project_name, workspace=workspace, epsg=epsg)
 
-        self.assertEqual(name, project.get_name())
+        self.assertIsInstance(project, Project)
+        self.assertEqual(project_name, project.get_name())
 
-    def test_read_polygon(self):
-        polygon = misc.calculate_polygon_from_filename('test_data/test_tile_27620_158050.las', 10, 3, 4)
-        polygon_a = Polygon([(27620, 158050), (27630, 158050), (27630, 158060), (27620, 158060), (27620, 158050)]);
+    def test_add_new_pointcloud(self):
+        project = Project(project_name, workspace=workspace, epsg=epsg)
+        pointcloud = project.add_new_pointcloud(point_cloud_name)
 
-        self.assertEqual(polygon_a, polygon)
+        self.assertIsInstance(pointcloud, PointCloud)
+        self.assertEqual(point_cloud_name, pointcloud.get_name())
+
+    def test_add_new_pointcloud_and_read_tiles(self):
+        project = Project(project_name, workspace=workspace, epsg=epsg)
+        pointcloud = project.add_new_pointcloud(point_cloud_name)
+
+        names_polygons = misc.get_names_and_polygons_in_workspace(workspace, settings={'step': 25, 'x_pos': 3, 'y_pos': 4})
+        for data in names_polygons:
+            pointcloud.add_tile(data['name'], data['polygon'])
+
+        tile_names = pointcloud.get_tiles()
+        tile = pointcloud.get_tile(list(tile_names.keys())[0])
+        points = tile.get_points()
+        self.assertIsInstance(tile, Tile)
+        self.assertEqual((11089, 4), np.shape(points))
+
+    def test_get_project_bbox(self):
+        project = Project(project_name, workspace=workspace, epsg=epsg)
+        pointcloud = project.add_new_pointcloud(point_cloud_name)
+        names_polygons = misc.get_names_and_polygons_in_workspace(workspace, settings={'step': 25, 'x_pos': 3, 'y_pos': 4})
+        for data in names_polygons:
+            pointcloud.add_tile(data['name'], data['polygon'])
+
+        bbox = project.get_project_bbox()
+        print(bbox)
+
 
 
 if __name__ == '__main__':

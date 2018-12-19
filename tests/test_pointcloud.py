@@ -39,10 +39,10 @@ class ProjectTests(unittest.TestCase):
         point_cloud.add_tile(tile_name_2, polygon_2)
         self.assertEqual(2, point_cloud.number_of_tiles())
 
-    def test_get_tile_by_name(self):
+    def test_get_tile(self):
         point_cloud = PointCloud(name, workspace, epsg, metadata)
         point_cloud.add_tile(tile_name_1, polygon_1)
-        tile = point_cloud.get_tile_by_name(tile_name_1)
+        tile = point_cloud.get_tile(tile_name_1)
 
         self.assertEqual(tile_name_1, tile.get_name())
 
