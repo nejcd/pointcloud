@@ -12,7 +12,6 @@ class Project:
 
     def __init__(self, project_name, epsg=None, workspace='./', pointcloud=None, labels=None):
         """
-
         :param labels:
         :param project_name:
         :param epsg: 
@@ -122,6 +121,7 @@ class Project:
 
     def can_load(self):
         my_file = Path(self.workspace + self.name + self.ext)
+        print(my_file)
         return my_file.is_file()
 
     def load(self):

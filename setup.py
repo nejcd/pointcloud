@@ -23,9 +23,9 @@ setup(
         'descartes'
     ],
     scripts=[
-        'scripts/main',
-        'scripts/extract_classes',
-        'scripts/multipolygon',
+        'scripts/main.py',
+        'scripts/extract_classes.py',
+        'scripts/multipolygon.py',
     ],
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
