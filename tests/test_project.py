@@ -1,10 +1,11 @@
 import unittest
-from shapely.geometry import Polygon
-from pointcloud.project import Project
+
+import numpy as np
+
 import pointcloud.utils.misc as misc
 from pointcloud.pointcloud import PointCloud
+from pointcloud.project import Project
 from pointcloud.tile import Tile
-import numpy as np
 
 project_name = 'Test'
 point_cloud_name = 'p1'
@@ -12,8 +13,8 @@ workspace = 'test_data/'
 epsg = '3912'
 metadata = 'Testing pointcloud'
 
-class ProjectTests(unittest.TestCase):
 
+class ProjectTests(unittest.TestCase):
     def test_create(self):
         project = Project(project_name, workspace=workspace, epsg=epsg)
 
@@ -31,7 +32,8 @@ class ProjectTests(unittest.TestCase):
         project = Project(project_name, workspace=workspace, epsg=epsg)
         pointcloud = project.add_new_pointcloud(point_cloud_name)
 
-        names_polygons = misc.get_names_and_polygons_in_workspace(workspace, settings={'step': 25, 'x_pos': 3, 'y_pos': 4})
+        names_polygons = misc.get_names_and_polygons_in_workspace(workspace,
+                                                                  settings={'step': 25, 'x_pos': 3, 'y_pos': 4})
         for data in names_polygons:
             pointcloud.add_tile(data['name'], data['polygon'])
 
@@ -44,7 +46,8 @@ class ProjectTests(unittest.TestCase):
     def test_get_project_bbox(self):
         project = Project(project_name, workspace=workspace, epsg=epsg)
         pointcloud = project.add_new_pointcloud(point_cloud_name)
-        names_polygons = misc.get_names_and_polygons_in_workspace(workspace, settings={'step': 25, 'x_pos': 3, 'y_pos': 4})
+        names_polygons = misc.get_names_and_polygons_in_workspace(workspace,
+                                                                  settings={'step': 25, 'x_pos': 3, 'y_pos': 4})
         for data in names_polygons:
             pointcloud.add_tile(data['name'], data['polygon'])
 
@@ -55,12 +58,21 @@ class ProjectTests(unittest.TestCase):
         project = Project(project_name, workspace=workspace, epsg=epsg)
         pointcloud = project.add_new_pointcloud(point_cloud_name)
 
-        names_polygons = misc.get_names_and_polygons_in_workspace(workspace, settings={'step': 25, 'x_pos': 3, 'y_pos': 4})
+        names_polygons = misc.get_names_and_polygons_in_workspace(workspace,
+                                                                  settings={'step': 25, 'x_pos': 3, 'y_pos': 4})
         for data in names_polygons:
             pointcloud.add_tile(data['name'], data['polygon'])
 
         stats = project.get_stats()
-        self.assertEqual({'name': 'Test', 'num_point_clouds': 1, 'workspace': 'test_data/', 'p1': {'area': 186.82999999999998, 'num_points': 21931, 'density': 117.38, 'tiles': 2}}, stats)
+        true_values = {'name': 'Test',
+                       'num_pointclouds': 1,
+                       'workspace': 'test_data/',
+                       'pointclouds': {'p1':
+                                           {'area': 186.82999999999998,
+                                            'num_points': 21931,
+                                            'density': 117.38,
+                                            'tiles': 2}}}
+        self.assertEqual(true_values, stats)
 
 
 if __name__ == '__main__':
