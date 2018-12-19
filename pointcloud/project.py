@@ -74,11 +74,12 @@ class Project:
             return self.stats
 
         self.stats = {'name': self.name,
-                      'num_point_clouds': len(self.pointclouds),
-                      'workspace': self.workspace}
+                      'num_pointclouds': len(self.pointclouds),
+                      'workspace': self.workspace,
+                      'pointclouds': {}}
 
         for name, pointcloud in self.pointclouds.items():
-            self.stats[name] = pointcloud.get_stats()
+            self.stats['pointclouds'][name] = pointcloud.get_stats()
 
         return self.stats
 
