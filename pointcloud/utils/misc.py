@@ -4,7 +4,7 @@ from shapely.geometry import Polygon, MultiPolygon
 from matplotlib import pyplot
 from descartes.patch import PolygonPatch
 import matplotlib.pyplot as plt
-from pointcloud.utils.plyfile import PlyData, PlyElement
+from plyfile import PlyData, PlyElement
 from pointcloud.utils.eulerangles import euler2mat
 import glob
 import laspy
@@ -292,10 +292,6 @@ def draw_point_cloud(input_points, canvasSize=500, space=200, diameter=25,
 def point_cloud_three_views(points):
     """ input points Nx3 numpy array (+y is up direction).
         return an numpy array gray image of size 500x1500. """
-    # +y is up direction
-    # xrot is azimuth
-    # yrot is in-plane
-    # zrot is elevation
     img1 = draw_point_cloud(points, zrot=110 / 180.0 * np.pi, xrot=45 / 180.0 * np.pi, yrot=0 / 180.0 * np.pi)
     img2 = draw_point_cloud(points, zrot=70 / 180.0 * np.pi, xrot=135 / 180.0 * np.pi, yrot=0 / 180.0 * np.pi)
     img3 = draw_point_cloud(points, zrot=180.0 / 180.0 * np.pi, xrot=90 / 180.0 * np.pi, yrot=0 / 180.0 * np.pi)
@@ -303,7 +299,7 @@ def point_cloud_three_views(points):
     return image_large
 
 
-def pyplot_draw_point_cloud(points, output_filename):
+def pyplot_draw_point_cloud(points):
     """ points is a Nx3 numpy array """
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -319,7 +315,7 @@ def pyplot_draw_volume(vol, output_filename):
         output an image to output_filename
     """
     points = volume_to_point_cloud(vol)
-    pyplot_draw_point_cloud(points, output_filename)
+    pyplot_draw_point_cloud(points)
 
 
 # -----------------------
