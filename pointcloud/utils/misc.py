@@ -318,6 +318,31 @@ def pyplot_draw_volume(vol, output_filename):
     pyplot_draw_point_cloud(points)
 
 
+def plot_3d(points, max_points=1000, title=None, save=False, path=None):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    color = 1
+
+    np.random.shuffle(points)
+    plotpoints = points[:max_points, :]
+    for point in plotpoints:
+        if len(point) >= 4:
+            color = point[3]
+        ax.scatter(point[0], point[1], point[2], c='b')
+
+    if title:
+        ax.set_title(title)
+
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    if save:
+        if path is None:
+            raise Exception('Path to location has to be provided')
+        plt.savefig('{0}plt_{1}.png'.format(path, title))
+    else:
+        plt.show()
+
 # -----------------------
 # Project Visualization
 # -----------------------
