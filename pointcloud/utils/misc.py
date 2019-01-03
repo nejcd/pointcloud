@@ -318,17 +318,33 @@ def pyplot_draw_volume(vol, output_filename):
     pyplot_draw_point_cloud(points)
 
 
-def plot_3d(points, max_points=1000, title=None, save=False, path=None):
+def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=None):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    color = 1
+    color = 'k'
+    label = 'point'
 
     np.random.shuffle(points)
     plotpoints = points[:max_points, :]
-    for point in plotpoints:
-        if len(point) >= 4:
-            color = point[3]
-        ax.scatter(point[0], point[1], point[2], c='b')
+
+    if labels:
+        for key, l in labels.items():
+            group = []
+            point_labels = plotpoints[:, 3]
+            group = plotpoints[point_labels == int(key)]
+            color = l['color']
+            label = l['name']
+            if len(group) > 0:
+                ax.scatter(group[:, 0], group[:, 1], group[:, 2], c=color, label=label)
+
+    else:
+        for point in plotpoints:
+            code = 0
+            if len(point) >= 4:
+                color = 'k'
+                label = str(int(point[3]))
+
+            ax.scatter(point[0], point[1], point[2], c=color)
 
     if title:
         ax.set_title(title)
@@ -336,6 +352,8 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None):
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
+    plt.legend(loc='upper left')
+
     if save:
         if path is None:
             raise Exception('Path to location has to be provided')
