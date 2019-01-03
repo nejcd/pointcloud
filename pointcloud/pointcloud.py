@@ -16,10 +16,17 @@ class PointCloud:
         self.polygons = None
         self.train_tiles = {}
         self.test_tiles = {}
+        self.labels = {}
         self.extension = '.las' #TODO Think how to handle different formats
 
     def get_name(self):
         return self.name
+
+    def set_labels(self, labels):
+        self.labels = labels
+
+    def get_labels(self):
+        return self.labels
 
     def add_tile(self, name, polygon=None):
         if name is self.tiles:
