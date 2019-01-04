@@ -69,8 +69,8 @@ def translate_and_scale_from_bounds(pointcloud, bounds):
     mean_z = 0.5 * (bounds[0][2] + bounds[1][2])
     max_value = max([dx, dy, dz])
 
-    pointcloud = translate_points(pointcloud, [-mean_x, -mean_y, -mean_z, 0])
-    pointcloud = scale_points(pointcloud, [1/max_value, 1/max_value, 1/max_value, 1])
+    pointcloud = translate_points(pointcloud, [-mean_x, -mean_y, -mean_z])
+    pointcloud = scale_points(pointcloud, [1/max_value, 1/max_value, 1/max_value])
 
     return pointcloud
 
