@@ -318,7 +318,7 @@ def pyplot_draw_volume(vol, output_filename):
     pyplot_draw_point_cloud(points)
 
 
-def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=None):
+def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=None, label_vector=None):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     color = 'k'
@@ -330,7 +330,10 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=N
     if labels:
         for key, l in labels.items():
             group = []
-            point_labels = plotpoints[:, 3]
+            if label_vector:
+                point_labels = label_vector
+            else:
+                point_labels = plotpoints[:, 3]
             group = plotpoints[point_labels == int(key)]
             color = l['color']
             label = l['name']
