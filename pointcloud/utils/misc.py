@@ -356,6 +356,7 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=N
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
     plt.legend(loc='upper left')
+    plt.axis('equal')
 
     if save:
         if path is None:
