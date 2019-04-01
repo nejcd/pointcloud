@@ -147,14 +147,26 @@ class PointCloud:
             'area': 0,
             'num_points': 0,
             'density': 0,
-            'tiles': len(self.tiles)
+            'tiles': len(self.tiles),
+            'class_frequency': None
         }
         for name, tile in self.tiles.items():
             stats['area'] += round(tile.get_area(), 2)
             stats['num_points'] += tile.get_number_of_points()
+
         stats['density'] = round(stats['num_points'] / stats['area'], 2)
+        stats['class_frequency'] = self.calculate_point_count_per_class()
 
         return stats
+
+    def calculate_point_count_per_class(self):
+        fq = {}
+        for tile in self.tiles:
+            fq_tile = tile.get_point_count_per_class()
+
+            for c, count in fq_tile.items():
+                fq[c] += count
+        return fq
 
     def get_intersected_tiles(self, geometry):
         """
