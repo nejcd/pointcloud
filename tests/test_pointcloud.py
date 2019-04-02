@@ -1,7 +1,8 @@
 import unittest
-from shapely.geometry import Polygon, Point
-from pointcloud.pointcloud import PointCloud
 
+from shapely.geometry import Polygon, Point
+
+from pointcloud.pointcloud import PointCloud
 
 name = 'Test'
 workspace = '../tests/'
@@ -51,7 +52,7 @@ class ProjectTests(unittest.TestCase):
         point_cloud.add_tile(tile_name_1, polygon_1)
         point_cloud.add_tile(tile_name_2, polygon_2)
 
-        num_of_points = 11000  #tile1 has less, tile2 has more
+        num_of_points = 11000  # tile1 has less, tile2 has more
 
         tiles = point_cloud.get_tiles_by_point_count(num_of_points)
         tile_name = next(iter(tiles))
@@ -69,6 +70,14 @@ class ProjectTests(unittest.TestCase):
                                                                            (27630, 158070),
                                                                            (27620, 158070)]))))
 
+    def test_get_stats(self):
+        point_cloud = PointCloud(name, workspace, epsg, metadata)
+        point_cloud.add_tile(tile_name_1, polygon_1)
+
+        print(point_cloud.get_stats())
+        true_res = {'area': 100.0, 'num_points': 10842, 'density': 108.42, 'tiles': 1,
+                    'class_frequency': {2: 7386, 3: 3456}}
+        self.assertEqual(true_res, point_cloud.get_stats())
 
 
 if __name__ == '__main__':
