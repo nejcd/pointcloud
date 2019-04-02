@@ -161,7 +161,8 @@ class PointCloud:
 
     def calculate_point_count_per_class(self):
         fq = {}
-        for tile in self.tiles:
+        for tile_name in list(self.tiles.keys()):
+            tile = self.tiles[tile_name]
             fq_tile = tile.get_point_count_per_class()
 
             for c, count in fq_tile.items():
