@@ -51,13 +51,13 @@ def get_names_and_polygons_in_workspace(workspace, settings=None, polygon_from_f
         reader = readers.TxtReader(xyz=file_format_settings['xyz'],
                                    label=file_format_settings['label'],
                                    features=file_format_settings['features'])
-    elif file_format == 'txt':
+    elif file_format == 'npy':
         reader = readers.NpyReader(xyz=file_format_settings['xyz'],
                                    label=file_format_settings['label'],
                                    features=file_format_settings['features'])
     else:
         raise Exception('Not supported file format')
-    files = glob.glob(workspace + "*." + reader.extension)
+    files = glob.glob(workspace + "/*." + reader.extension)
 
     out = []
     if len(files) == 0:

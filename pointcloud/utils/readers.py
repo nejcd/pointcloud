@@ -7,7 +7,6 @@ class LasReader(object):
 
     def get_points(self, path):
         """
-        :param filepath:
         :return:
         """
         path = self.validate_filename(path)
