@@ -1,10 +1,12 @@
 import os
-from pointcloud.pointcloud import PointCloud
-from shapely.geometry import MultiPolygon
 import pickle
-from pathlib import Path
-import numpy as np
 import random
+from pathlib import Path
+
+import numpy as np
+from shapely.geometry import MultiPolygon
+
+from pointcloud.pointcloud import PointCloud
 
 
 class Project:
@@ -25,9 +27,11 @@ class Project:
         self.test_pointclouds = None
         self.stats = None
 
-    def add_new_pointcloud(self, name, folder=None):
+    def add_new_pointcloud(self, name, folder=None, file_format=None, file_format_settings=None):
         """
         Adds PointClouds to project
+        :param file_format_settings:
+        :param file_format:
         :param name:
         :param folder:
         :return:
@@ -42,7 +46,8 @@ class Project:
             if not os.path.exists(path):
                 os.makedirs(path)
 
-        self.pointclouds[name] = PointCloud(name, path, self.epsg)
+        self.pointclouds[name] = PointCloud(name, path, self.epsg, file_format=file_format,
+                                            file_format_settings=file_format_settings)
         return self.pointclouds[name]
 
     def get_name(self):
