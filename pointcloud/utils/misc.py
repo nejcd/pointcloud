@@ -37,7 +37,7 @@ def calculate_polygon_from_filename(file_name, grid_size, x_pos, y_pos):
 
 
 def get_names_and_polygons_in_workspace(workspace, settings=None, polygon_from_filename_settings=None,
-                                        file_format='las'):
+                                        file_format='las', file_format_settings=None):
     """
     :param file_format:
     :param workspace: Path to workspace
@@ -45,7 +45,19 @@ def get_names_and_polygons_in_workspace(workspace, settings=None, polygon_from_f
     :param polygon_from_filename_settings:
     :return:
     """
-    files = glob.glob(workspace + "*." + file_format)
+    if file_format == 'las':
+        reader = readers.LasReader()
+    elif file_format == 'txt':
+        reader = readers.TxtReader(xyz=file_format_settings['xyz'],
+                                   label=file_format_settings['label'],
+                                   features=file_format_settings['features'])
+    elif file_format == 'txt':
+        reader = readers.NpyReader(xyz=file_format_settings['xyz'],
+                                   label=file_format_settings['label'],
+                                   features=file_format_settings['features'])
+    else:
+        raise Exception('Not supported file format')
+    files = glob.glob(workspace + "*." + reader.extension)
 
     out = []
     if len(files) == 0:
