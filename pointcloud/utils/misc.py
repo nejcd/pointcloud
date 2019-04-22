@@ -1,13 +1,16 @@
-import math
-import numpy as np
-from shapely.geometry import Polygon, MultiPolygon
-from matplotlib import pyplot
-from descartes.patch import PolygonPatch
-import matplotlib.pyplot as plt
-from plyfile import PlyData, PlyElement
-from pointcloud.utils.eulerangles import euler2mat
 import glob
+import math
+
+import matplotlib.pyplot as plt
+import numpy as np
+from descartes.patch import PolygonPatch
+from matplotlib import pyplot
+from plyfile import PlyData, PlyElement
+from shapely.geometry import Polygon, MultiPolygon
+
 from pointcloud.utils import processing, readers
+from pointcloud.utils.eulerangles import euler2mat
+
 
 def calculate_polygon_from_filename(file_name, grid_size, x_pos, y_pos):
     """
@@ -33,7 +36,8 @@ def calculate_polygon_from_filename(file_name, grid_size, x_pos, y_pos):
                     (x_min, y_min + grid_size)])
 
 
-def get_names_and_polygons_in_workspace(workspace, settings=None, polygon_from_filename_settings=None, file_format='las'):
+def get_names_and_polygons_in_workspace(workspace, settings=None, polygon_from_filename_settings=None,
+                                        file_format='las'):
     """
     :param file_format:
     :param workspace: Path to workspace
@@ -41,11 +45,7 @@ def get_names_and_polygons_in_workspace(workspace, settings=None, polygon_from_f
     :param polygon_from_filename_settings:
     :return:
     """
-    if file_format == 'las':
-        reader = readers.LasReader()
-        files = glob.glob(workspace + "*." + reader.extension)
-    else:
-        raise Exception
+    files = glob.glob(workspace + "*." + file_format)
 
     out = []
     if len(files) == 0:
@@ -172,7 +172,6 @@ def point_cloud_to_volume(points, vsize, radius=1.0):
     return vol
 
 
-
 def volume_to_point_cloud(vol):
     """ vol is occupancy grid (value = 0 or 1) of size vsize*vsize*vsize
         return Nx3 numpy array.
@@ -270,6 +269,7 @@ def draw_point_cloud(input_points, canvasSize=500, space=200, diameter=25,
     image = image / np.max(image)
     return image
 
+
 # -----------------------
 # Points Visualization
 # -----------------------
@@ -350,6 +350,7 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=N
         plt.savefig('{0}plt_{1}.png'.format(path, title))
     else:
         plt.show()
+
 
 # -----------------------
 # Project Visualization
