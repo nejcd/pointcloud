@@ -145,7 +145,6 @@ class TxtReader(object):
 
 
 class NpyReader(object):
-
     extension = 'npy'
 
     def __init__(self, xyz, label=None, features=None):
@@ -225,4 +224,3 @@ class NpyReader(object):
             points = np.hstack((points, features))
 
         np.save(path, points)
-

@@ -8,7 +8,8 @@ from pointcloud.utils import processing
 
 
 class PointCloud:
-    def __init__(self, name, workspace, epsg, metadata=None, file_format='las'):
+    def __init__(self, name, workspace, epsg=None, metadata=None, file_format='las', file_format_settings=None):
+        self.file_format_settings = file_format_settings
         self.metadata = metadata
         self.epsg = epsg
         self.workspace = workspace
@@ -34,7 +35,8 @@ class PointCloud:
         if name is self.tiles:
             raise ValueError('Tile with that name already exists')
 
-        self.tiles[name] = Tile(name, polygon=polygon, workspace=self.workspace, file_format=self.file_format)
+        self.tiles[name] = Tile(name, polygon=polygon, workspace=self.workspace, file_format=self.file_format,
+                                file_format_settings=self.file_format_settings)
 
     def create_new_tile(self, name, points, labels=None, features=None):
         """
@@ -54,7 +56,7 @@ class PointCloud:
             tile.set_features(features)
 
         tile.store()
-        self.add_tile(name, polygon) ## TODO Maybe this name need extenstion
+        self.add_tile(name, polygon)  ## TODO Maybe this name need extenstion
 
     def number_of_tiles(self):
         return len(self.tiles)
@@ -126,7 +128,7 @@ class PointCloud:
 
     def calculate_tile_polygons_from_points(self):
         """
-        Recalucalte polygons around points
+        Recalculate polygons around points
         :return:
         """
         n = 1

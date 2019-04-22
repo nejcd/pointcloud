@@ -4,7 +4,7 @@ from pointcloud.utils import processing, readers
 
 
 class Tile:
-    def __init__(self, name, polygon=None, workspace='./', file_format='las'):
+    def __init__(self, name, polygon=None, workspace='./', file_format='las', file_format_settings=None):
         """
         Tile information for LIDAR tile
 
@@ -21,8 +21,20 @@ class Tile:
         self.area = None
         self.density = None
         self.number_of_points = None
+
+        if file_format_settings is None:
+            file_format_settings = {'xyz': [0, 1, 2], 'label': [6], 'features': [3, 4, 5]}
+
         if file_format == 'las':
             self.reader = readers.LasReader()
+        elif file_format == 'txt':
+            self.reader = readers.TxtReader(xyz=file_format_settings['xyz'],
+                                            label=file_format_settings['label'],
+                                            features=file_format_settings['features'])
+        elif file_format == 'npy':
+            self.reader = readers.NpyReader(xyz=file_format_settings['xyz'],
+                                            label=file_format_settings['label'],
+                                            features=file_format_settings['features'])
         else:
             raise Exception('File format not supported')
 
