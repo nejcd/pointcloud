@@ -1,12 +1,14 @@
-import numpy as np
 import random
+import sys
+
+import numpy as np
+
 from pointcloud.tile import Tile
 from pointcloud.utils import processing
-import sys
 
 
 class PointCloud:
-    def __init__(self, name, workspace, epsg, metadata=None):
+    def __init__(self, name, workspace, epsg, metadata=None, file_format='las'):
         self.metadata = metadata
         self.epsg = epsg
         self.workspace = workspace
@@ -17,7 +19,7 @@ class PointCloud:
         self.train_tiles = {}
         self.test_tiles = {}
         self.labels = {}
-        self.extension = '.las' #TODO Think how to handle different formats
+        self.file_format = file_format
 
     def get_name(self):
         return self.name
@@ -32,14 +34,27 @@ class PointCloud:
         if name is self.tiles:
             raise ValueError('Tile with that name already exists')
 
-        self.tiles[name] = Tile(name, polygon=polygon, workspace=self.workspace)
+        self.tiles[name] = Tile(name, polygon=polygon, workspace=self.workspace, file_format=self.file_format)
 
-    def create_new_tile(self, name, points):
-        filename = name + self.extension
+    def create_new_tile(self, name, points, labels=None, features=None):
+        """
+        :param features:
+        :param labels:
+        :param name:
+        :param points:
+        :return:
+        """
         polygon = processing.boundary(points)
-        tile = Tile(filename, polygon, self.workspace)
-        tile.store_new_tile(points)
-        self.add_tile(filename, polygon)
+        tile = Tile(name, polygon, self.workspace)
+        tile.set_points(points[:, :3])
+
+        if labels:
+            tile.set_labels(labels)
+        if features:
+            tile.set_features(features)
+
+        tile.store()
+        self.add_tile(name, polygon) ## TODO Maybe this name need extenstion
 
     def number_of_tiles(self):
         return len(self.tiles)
@@ -82,7 +97,7 @@ class PointCloud:
         keys = list(self.tiles.keys())
         random.shuffle(keys)
         self.train_tiles = keys[0:train_num]
-        self.test_tiles = keys[train_num:train_num+test_num]
+        self.test_tiles = keys[train_num:train_num + test_num]
         return self.train_tiles, self.test_tiles
 
     def get_tiles_by_point_count(self, number_of_points):

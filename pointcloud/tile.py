@@ -1,28 +1,36 @@
-import laspy
 import numpy as np
 
-from pointcloud.utils import misc
-from pointcloud.utils import processing
+from pointcloud.utils import processing, readers
 
 
 class Tile:
-    def __init__(self, filename, polygon=None, workspace='./'):
+    def __init__(self, name, polygon=None, workspace='./', file_format='las'):
         """
         Tile information for LIDAR tile
 
-        :param filename:
+        :param name:
         :param polygon (Shapely):
         :param workspace:
         """
+        self.points = None
+        self.labels = None
+        self.features = None
         self.workspace = workspace
-        self.filename = filename
+        self.name = name
         self.polygon = polygon
         self.area = None
         self.density = None
         self.number_of_points = None
+        if file_format == 'las':
+            self.reader = readers.LasReader()
+        else:
+            raise Exception('File format not supported')
 
     def get_name(self):
-        return self.filename
+        return self.name
+
+    def get_filename(self):
+        return '{0}.{1}'.format(self.get_name(), self.reader.extension)
 
     def get_workspace(self):
         return self.workspace
@@ -40,18 +48,14 @@ class Tile:
         return self.polygon.bounds
 
     def get_min_max_values(self):
-        file = laspy.file.File(self.workspace + self.filename, mode='r')
-        min_values = file.header.min
-        max_values = file.header.max
-        file.close()
-        return min_values, max_values
+        points = self.get_points()
+        return np.min(points), np.max(points)
 
     def get_polygon(self):
         return self.polygon
 
     def get_point_count_per_class(self):
-        points = self.get_points()
-        labels = points[:, -1]
+        labels = self.get_labels()
         classes = np.unique(labels)
 
         fq = {}
@@ -62,10 +66,8 @@ class Tile:
 
     def get_number_of_points(self):
         if self.number_of_points is None:
-            file = laspy.file.File(self.workspace + self.filename, mode='r')
-            self.number_of_points = len(file.points)
-            file.close()
-
+            points = self.get_points()
+            self.number_of_points = len(points)
         return self.number_of_points
 
     def get_density(self):
@@ -75,7 +77,17 @@ class Tile:
         return self.density
 
     def get_points(self):
-        return misc.get_points(self.workspace + self.filename)
+        if self.points is None:
+            self.points = self.reader.get_points(self.get_path())
+        return self.points
+
+    def get_labels(self):
+        if self.labels is None:
+            self.labels = self.reader.get_labels(self.get_path())
+        return self.labels
+
+    def get_path(self):
+        return self.workspace + self.get_filename()
 
     def calculate_tile_polygon_from_points(self):
         self.polygon = processing.boundary(self.get_points())
@@ -87,24 +99,14 @@ class Tile:
     def clip(self, clip_polygon):
         return processing.clip_by_bbox(self.get_points(), clip_polygon.bounds)
 
-    def store_new_tile(self, points):
-        header = laspy.header.Header()
+    def set_points(self, points):
+        self.points = points
 
-        file_out = laspy.file.File(self.workspace + self.filename, mode='w', header=header)
-        file_out.X = np.ndarray.astype(points[:, 0] * 100,
-                                       dtype=int)  # TODO DO NICER :) ALSO HANDLE WHOLE HEADER STUFF ETC!
-        file_out.Y = np.ndarray.astype(points[:, 1] * 100, dtype=int)
-        file_out.Z = np.ndarray.astype(points[:, 2] * 100, dtype=int)
-        file_out.classification = np.ndarray.astype(points[:, 3], dtype=int)
+    def set_labels(self, labels):
+        self.points = labels
 
-        # TODO THIS SHOULD GO AWAY
-        file_out.header.offset = [0, 0, 0]
-        file_out.header.scale = [0.01, 0.01, 0.01]
+    def set_features(self, features):
+        self.points = features
 
-        file_out.close()
-
-
-if __name__ == '__main__':
-    file = laspy.file.File('../tests/test_tile_27620_158050.las', mode='r')
-    print(file.header.scale)
-    print(file.header.offset)
+    def store(self):
+        self.reader.store(path=self.get_path(), points=self.points, labels=self.labels)

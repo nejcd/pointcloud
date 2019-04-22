@@ -34,14 +34,17 @@ class ProjectTests(unittest.TestCase):
 
         names_polygons = misc.get_names_and_polygons_in_workspace(workspace,
                                                                   settings={'step': 25, 'x_pos': 3, 'y_pos': 4})
+
         for data in names_polygons:
             pointcloud.add_tile(data['name'], data['polygon'])
 
         tile_names = pointcloud.get_tiles()
         tile = pointcloud.get_tile(list(tile_names.keys())[0])
         points = tile.get_points()
+        labels = tile.get_labels()
         self.assertIsInstance(tile, Tile)
-        self.assertEqual((11089, 4), np.shape(points))
+        self.assertEqual((11089, 3), np.shape(points))
+        self.assertEqual((11089, 1), np.shape(labels))
 
     def test_get_project_bbox(self):
         project = Project(project_name, workspace=workspace, epsg=epsg)
