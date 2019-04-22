@@ -5,6 +5,7 @@ import numpy as np
 
 from pointcloud.tile import Tile
 from pointcloud.utils import processing
+from shapely.geometry import MultiPolygon
 
 
 class PointCloud:
@@ -217,3 +218,13 @@ class PointCloud:
                     points = np.append(points, clipped, axis=0)
 
         return points
+
+    def get_polygons(self):
+        """
+        Get polygons of all pointclouds and tiles
+        :return:
+        """
+        geometries = []
+        for n, tile in self.tiles.items():
+            geometries.append(tile.get_polygon())
+        return MultiPolygon(geometries)
