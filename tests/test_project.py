@@ -1,12 +1,11 @@
 import unittest
+from pathlib import PosixPath
 
 import numpy as np
-
 import pointcloud.utils.misc as misc
 from pointcloud.pointcloud import PointCloud
 from pointcloud.project import Project
 from pointcloud.tile import Tile
-from pathlib import PosixPath
 
 project_name = 'Test'
 point_cloud_name = 'p1'
@@ -32,7 +31,7 @@ class ProjectTests(unittest.TestCase):
     def test_add_new_pointcloud_and_read_tiles(self):
         project = Project(project_name, workspace=workspace, epsg=epsg)
         pointcloud = project.add_new_pointcloud(point_cloud_name, file_format='las',
-                                                                  file_format_settings=None)
+                                                file_format_settings=None)
 
         names_polygons = misc.get_names_and_polygons_in_workspace(workspace,
                                                                   settings={'step': 25, 'x_pos': 3, 'y_pos': 4})
@@ -57,7 +56,6 @@ class ProjectTests(unittest.TestCase):
             pointcloud.add_tile(data['name'], data['polygon'])
 
         bbox = project.get_project_bbox()
-        print(bbox)
 
     def test_get_stats(self):
         project = Project(project_name, workspace=workspace, epsg=epsg)
@@ -93,9 +91,17 @@ class ProjectTests(unittest.TestCase):
 
         project.save()
 
-        project_load = Project(project_name, workspace=workspace)
+        project_load = Project(project_name, workspace=workspace, epsg=epsg)
         project_load.load()
-        self.assertEqual(project, project_load)
+
+        self.assertEqual(project.get_name(), project_load.get_name())
+
+        c0 = project.get_point_cloud(point_cloud_name)
+        c1 = project_load.get_point_cloud(point_cloud_name)
+        for data in names_polygons:
+            t0 = c0.get_tile(data['name'])
+            t1 = c1.get_tile(data['name'])
+            self.assertEqual(t1.get_number_of_points(), t0.get_number_of_points())
 
 
 if __name__ == '__main__':

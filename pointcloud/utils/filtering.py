@@ -17,4 +17,3 @@ if __name__ == '__main__':
                         [3, 5, 10, 1]])
 
     filteterd = by_label(test_pc, 0)
-    print(filteterd)

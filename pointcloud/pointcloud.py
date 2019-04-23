@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 
 import numpy as np
-
 from pointcloud.tile import Tile
 from pointcloud.utils import processing
 from shapely.geometry import MultiPolygon
@@ -58,16 +57,17 @@ class PointCloud:
         :return:
         """
         polygon = processing.boundary(points)
-        tile = Tile(name, polygon, self.workspace)
-        tile.set_points(points[:, :3])
+        tile = Tile(name, polygon, self.workspace, file_format=self.file_format,
+                    file_format_settings=self.file_format_settings)
+        tile.set_points(points)
 
-        if labels:
+        if labels is not None:
             tile.set_labels(labels)
-        if features:
+        if features is not None:
             tile.set_features(features)
 
         tile.store()
-        self.add_tile(name, polygon)  ## TODO Maybe this name need extenstion
+        self.add_tile(name, polygon)
 
     def number_of_tiles(self):
         return len(self.tiles)
@@ -219,15 +219,29 @@ class PointCloud:
         """
         tiles = self.get_intersected_tiles(geometry)
         points = None
+        labels = None
+        features = None
         for tile in tiles:
-            clipped = tile.clip(geometry)
-            if len(clipped) != 0:
+            clipped_points, clipped_labels, clipped_features = tile.clip(geometry)
+            if len(clipped_points) != 0:
                 if points is None:
-                    points = clipped
+                    points = clipped_points
                 else:
-                    points = np.append(points, clipped, axis=0)
+                    points = np.append(points, clipped_points, axis=0)
 
-        return points
+            if len(clipped_labels) != 0:
+                if labels is None:
+                    labels = clipped_labels
+                else:
+                    labels = np.append(labels, clipped_labels, axis=0)
+
+            if len(clipped_features) != 0:
+                if features is None:
+                    features = clipped_features
+                else:
+                    features = np.append(features, clipped_features, axis=0)
+
+        return points, labels, features
 
     def get_polygons(self):
         """

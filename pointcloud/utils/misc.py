@@ -325,7 +325,7 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=N
     np.random.shuffle(points)
     plotpoints = points[:max_points, :]
 
-    if labels:
+    if labels is not None:
         for key, l in labels.items():
             group = []
             if label_vector:

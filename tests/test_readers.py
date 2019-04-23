@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 from pointcloud.utils import readers
 
+file_format_settings = {'points': [0, 1, 2], 'labels': [3], 'features': [4, 5, 6]}
 
 class TestTile(unittest.TestCase):
 
@@ -12,32 +13,32 @@ class TestTile(unittest.TestCase):
         self.assertEqual((10842, 3), np.shape(points))
 
     def test_read_txt_points(self):
-        reader = readers.TxtReader(xyz=[0, 1, 2])
+        reader = readers.TxtReader(settings=file_format_settings)
         points = reader.get_points('test_data/test_tile_27620_158050')
         self.assertEqual((10842, 3), np.shape(points))
 
     def test_read_txt_labels(self):
-        reader = readers.TxtReader(xyz=[0, 1, 2], label=[3])
+        reader = readers.TxtReader(settings=file_format_settings)
         labels = reader.get_labels('test_data/test_tile_27620_158050')
         self.assertEqual(10842, np.shape(labels)[0])
 
     def test_read_txt_features(self):
-        reader = readers.TxtReader(xyz=[0, 1, 2], features=[4, 5, 6])
+        reader = readers.TxtReader(settings=file_format_settings)
         features = reader.get_features('test_data/test_tile_27620_158050')
         self.assertEqual((10842, 3), np.shape(features))
 
     def test_read_npy_points(self):
-        reader = readers.NpyReader(xyz=[0, 1, 2])
+        reader = readers.NpyReader(settings=file_format_settings)
         points = reader.get_points('test_data/test_tile_27620_158050')
         self.assertEqual((10842, 3), np.shape(points))
 
     def test_read_npy_labels(self):
-        reader = readers.NpyReader(xyz=[0, 1, 2], label=[3])
+        reader = readers.NpyReader(settings=file_format_settings)
         labels = reader.get_labels('test_data/test_tile_27620_158050')
         self.assertEqual(10842, np.shape(labels)[0])
 
     def test_read_npy_features(self):
-        reader = readers.NpyReader(xyz=[0, 1, 2], features=[4, 5, 6])
+        reader = readers.NpyReader(settings=file_format_settings)
         features = reader.get_features('test_data/test_tile_27620_158050')
         self.assertEqual((10842, 3), np.shape(features))
 

@@ -23,19 +23,12 @@ class Tile:
         self.density = None
         self.number_of_points = None
 
-        if file_format_settings is None:
-            file_format_settings = {'xyz': [0, 1, 2], 'label': [6], 'features': [3, 4, 5]}
-
         if file_format == 'las':
-            self.reader = readers.LasReader()
+            self.reader = readers.LasReader(settings=file_format_settings)
         elif file_format == 'txt':
-            self.reader = readers.TxtReader(xyz=file_format_settings['xyz'],
-                                            label=file_format_settings['label'],
-                                            features=file_format_settings['features'])
+            self.reader = readers.TxtReader(settings=file_format_settings)
         elif file_format == 'npy':
-            self.reader = readers.NpyReader(xyz=file_format_settings['xyz'],
-                                            label=file_format_settings['label'],
-                                            features=file_format_settings['features'])
+            self.reader = readers.NpyReader(settings=file_format_settings)
         else:
             raise Exception('File format not supported')
 
@@ -99,6 +92,14 @@ class Tile:
             self.labels = self.reader.get_labels(self.get_path())
         return self.labels
 
+    def get_features(self):
+        if self.features is None:
+            self.features = self.reader.get_features(self.get_path())
+        return self.features
+
+    def get_data(self):
+        return self.get_points(), self.get_labels(), self.get_features()
+
     def get_path(self):
         return self.workspace / self.get_filename()
 
@@ -110,16 +111,16 @@ class Tile:
         return self.polygon.intersects(geometry)
 
     def clip(self, clip_polygon):
-        return processing.clip_by_bbox(self.get_points(), clip_polygon.bounds)
+        return processing.clip_by_bbox(self.get_points(), clip_polygon.bounds, labels=self.get_labels(), features=self.get_features())
 
     def set_points(self, points):
         self.points = points
 
     def set_labels(self, labels):
-        self.points = labels
+        self.labels = labels
 
     def set_features(self, features):
-        self.points = features
+        self.features = features
 
     def store(self):
-        self.reader.store(path=self.get_path(), points=self.points, labels=self.labels)
+        self.reader.store(path=self.get_path(), points=self.points, labels=self.labels, features=self.features)

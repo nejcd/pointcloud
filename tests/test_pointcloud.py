@@ -1,8 +1,8 @@
 import unittest
 
-from shapely.geometry import Polygon, Point
-
+import numpy as np
 from pointcloud.pointcloud import PointCloud
+from shapely.geometry import Polygon, Point
 
 name = 'Test'
 workspace = '../tests/'
@@ -12,6 +12,25 @@ polygon_1 = Polygon([(27620, 158050), (27630, 158050), (27630, 158060), (27620, 
 polygon_2 = Polygon([(27620, 158060), (27630, 158060), (27630, 158070), (27620, 158070)])
 tile_name_1 = 'test_data/test_tile_27620_158050'
 tile_name_2 = 'test_data/test_tile_27620_158060'
+points = np.array([[1., 1., 1.],
+                   [1., 2., 1.],
+                   [3., 1., 1.],
+                   [4., 5., 1.],
+                   [3., 6., 10.],
+                   [2., 5., 10.],
+                   [4., 6., 10.],
+                   [3., 5., 10.]])
+labels = np.array([0., 0., 0., 0., 1., 1., 1., 1.])
+features = np.array([[1., 2., 1.],
+                     [1., 2., 1.],
+                     [1., 2., 1.],
+                     [1., 2., 1.],
+                     [1., 2., 3.],
+                     [1., 2., 3.],
+                     [1., 2., 3.],
+                     [1., 2., 3.]])
+
+file_format_settings = {'points': [0, 1, 2], 'labels': [6], 'features': [3, 4, 5]}
 
 
 class ProjectTests(unittest.TestCase):
@@ -19,6 +38,18 @@ class ProjectTests(unittest.TestCase):
     def test_create(self):
         point_cloud = PointCloud(name, workspace, epsg, metadata)
         self.assertEqual(name, point_cloud.get_name())
+
+    def test_create_new_tiles(self):
+        point_cloud = PointCloud(name, workspace='test_data/', metadata=metadata, file_format='txt',
+                                 file_format_settings=file_format_settings)
+        point_cloud.create_new_tile('test', points, labels=labels, features=features)
+        tile = point_cloud.get_tile('test')
+
+        points_1, labels_1, features_1 = tile.get_data()
+
+        self.assertTrue((points == points_1).all())
+        self.assertTrue((labels == labels_1).all())
+        self.assertTrue((features == features_1).all())
 
     def test_add_tiles(self):
         point_cloud = PointCloud(name, workspace, epsg, metadata)
