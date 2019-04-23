@@ -100,6 +100,8 @@ class PointCloud:
         :param seed:
         :return:
         """
+        print(PendingDeprecationWarning('Remove in future versions. (Use misc.create_train_test_split())'))
+
         train_num = int(np.ceil(len(self.tiles) * train))
         test_num = int(np.ceil(len(self.tiles) * (1 - train)))
         if train_num + test_num != len(self.tiles):

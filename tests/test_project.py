@@ -103,6 +103,22 @@ class ProjectTests(unittest.TestCase):
             t1 = c1.get_tile(data['name'])
             self.assertEqual(t1.get_number_of_points(), t0.get_number_of_points())
 
+    def test_get_tile_from_cloud_tile_name(self):
+        project = Project(project_name, workspace=workspace, epsg=epsg)
+        pointcloud = project.add_new_pointcloud('test_cloud', file_format='las',
+                                                file_format_settings=None)
+
+        pointcloud.add_tile('test_tile_1')
+        pointcloud.add_tile('test_tile_2')
+
+        t1_1 = pointcloud.get_tile('test_tile_1')
+        t2_1 = pointcloud.get_tile('test_tile_2')
+
+        t1_2 = project.get_tile_from_cloud_tile_name('test_cloud/test_tile_1')
+        t2_2 = project.get_tile_from_cloud_tile_name('test_cloud/test_tile_2')
+        self.assertEqual(t1_1, t1_2)
+        self.assertEqual(t2_1, t2_2)
+
 
 if __name__ == '__main__':
     unittest.main()

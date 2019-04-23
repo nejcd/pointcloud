@@ -72,6 +72,23 @@ class Project:
 
         return self.pointclouds[point_cloud_name]
 
+    def get_tile_from_cloud_tile_name(self, cloud_tile_name, delimiter='/'):
+        """
+        Get tile from string (cloud/tile1)
+        :param cloud_tile_name:
+        :param delimiter:
+        :return:
+        """
+        print(PendingDeprecationWarning('Remove in future versions. (Use misc.create_train_test_split())'))
+
+        split = cloud_tile_name.split(delimiter)
+        cloud_name = split[0]
+        tile_name = split[1]
+        cloud = self.get_point_cloud(cloud_name)
+        tile = cloud.get_tile(tile_name)
+        return tile
+
+
     def get_stats(self):
         """
         :return:

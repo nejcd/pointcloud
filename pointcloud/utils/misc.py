@@ -3,6 +3,7 @@ import math
 
 import matplotlib.pyplot as plt
 import numpy as np
+import random
 from descartes.patch import PolygonPatch
 from matplotlib import pyplot
 from plyfile import PlyData, PlyElement
@@ -11,6 +12,25 @@ from shapely.geometry import Polygon, MultiPolygon
 from pointcloud.utils import processing, readers
 from pointcloud.utils.eulerangles import euler2mat
 
+
+def create_train_test_split(names, train=0.8, seed=800815):
+    """
+    Create train test split trough names
+    :param train:
+    :param names:
+    :param seed:
+    :return:
+    """
+    raise DeprecationWarning('Remove in future versions. (Use misc.create_train_test_split())')
+    train_num = int(np.ceil(len(names) * train))
+    test_num = int(np.ceil(len(names) * (1 - train)))
+    if train_num + test_num != len(names):
+        diff = len(names) - (test_num + train_num)
+        test_num = test_num + diff
+
+    random.seed(seed)
+    random.shuffle(names)
+    return names[0:train_num], names[train_num:train_num + test_num]
 
 def calculate_polygon_from_filename(file_name, grid_size, x_pos, y_pos):
     """
@@ -360,10 +380,6 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=N
     else:
         plt.show()
 
-
-# -----------------------
-# Project Visualization
-# -----------------------
 
 def plot_polygons(multipolygons, title=None):
     """

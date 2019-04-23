@@ -127,5 +127,10 @@ def clip_by_bbox(points, bbox, labels=None, features=None):
     return points, labels, features
 
 
-
+def normalize(points):
+    centroid = np.mean(points, axis=0)
+    points = points - centroid
+    m = np.max(np.sqrt(np.sum(points ** 2, axis=1)))
+    points = points / m
+    return points
 
