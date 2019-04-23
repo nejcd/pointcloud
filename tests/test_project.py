@@ -80,6 +80,23 @@ class ProjectTests(unittest.TestCase):
                                             'tiles': 2}}}
         self.assertEqual(true_values, stats)
 
+    def test_save_load(self):
+        project = Project(project_name, workspace=workspace, epsg=epsg)
+        pointcloud = project.add_new_pointcloud(point_cloud_name, file_format='las',
+                                                file_format_settings=None)
+
+        names_polygons = misc.get_names_and_polygons_in_workspace(workspace,
+                                                                  settings={'step': 25, 'x_pos': 3, 'y_pos': 4})
+
+        for data in names_polygons:
+            pointcloud.add_tile(data['name'], data['polygon'])
+
+        project.save()
+
+        project_load = Project(project_name, workspace=workspace)
+        project_load.load()
+        self.assertEqual(project, project_load)
+
 
 if __name__ == '__main__':
     unittest.main()
