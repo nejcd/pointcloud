@@ -1,4 +1,5 @@
 import numpy as np
+from pathlib import Path
 
 from pointcloud.utils import processing, readers
 
@@ -15,7 +16,7 @@ class Tile:
         self.points = None
         self.labels = None
         self.features = None
-        self.workspace = workspace
+        self.workspace = Path(workspace)
         self.name = name
         self.polygon = polygon
         self.area = None
@@ -99,7 +100,7 @@ class Tile:
         return self.labels
 
     def get_path(self):
-        return self.workspace + self.get_filename()
+        return self.workspace / self.get_filename()
 
     def calculate_tile_polygon_from_points(self):
         self.polygon = processing.boundary(self.get_points())

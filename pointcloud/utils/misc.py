@@ -368,17 +368,20 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=N
 # Project Visualization
 # -----------------------
 
-
-def pyplot_project(multipolygon):
+def plot_polygons(multipolygons, title=None):
     """
-    :param multipolygon:
+    :param title:
+    :param multipolygons:
     :return:
     """
 
     fig = pyplot.figure(1, dpi=90)
     ax = fig.add_subplot(121)
 
-    for polygon in multipolygon:
+    if title:
+        ax.set_title(title)
+
+    for polygon in multipolygons:
         patch = PolygonPatch(polygon, facecolor='#6699cc', edgecolor='#ffffff', alpha=0.5, zorder=2)
         ax.add_patch(patch)
 

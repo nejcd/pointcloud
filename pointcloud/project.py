@@ -7,10 +7,11 @@ import numpy as np
 from shapely.geometry import MultiPolygon
 
 from pointcloud.pointcloud import PointCloud
+from pointcloud.utils import misc
 
 
 class Project:
-    ext = '.lp'
+    ext = 'lp'
 
     def __init__(self, project_name, epsg=None, workspace='./'):
         """
@@ -20,7 +21,7 @@ class Project:
         :param pointcloud: 
         """
         self.name = project_name
-        self.workspace = workspace
+        self.workspace = Path(workspace)
         self.pointclouds = {}
         self.epsg = epsg
         self.train_pointclouds = None
@@ -42,7 +43,7 @@ class Project:
         if folder is None:
             path = self.workspace
         else:
-            path = self.workspace + folder
+            path = self.workspace / folder
             if not os.path.exists(path):
                 os.makedirs(path)
 
@@ -117,7 +118,7 @@ class Project:
         Is there saved project version
         :return:
         """
-        my_file = Path(self.workspace + self.name + self.ext)
+        my_file = self.get_project_file_name()
         return my_file.is_file()
 
     def load(self):
@@ -126,11 +127,17 @@ class Project:
         :return:
         """
         print('\nLoading project {0}'.format(self.name))
-        f = open(self.workspace + self.name + self.ext, 'rb')
+        f = open(self.get_project_file_name(), 'rb')
         tmp_dict = pickle.load(f)
         f.close()
 
         self.__dict__.update(tmp_dict)
+
+    def get_project_file_name(self):
+        """
+        :return:
+        """
+        return self.workspace / '{0}.{1}'.format(self.name, self.ext)
 
     def save(self):
         """
@@ -161,3 +168,10 @@ class Project:
         self.train_pointclouds = keys[0:train_num]
         self.test_pointclouds = keys[train_num:train_num + test_num]
         return self.train_pointclouds, self.test_pointclouds
+
+    def plot_project(self):
+        for name, pointcloud in self.pointclouds.items():
+            geometries = []
+            for n, tile in pointcloud.get_tiles().items():
+                geometries.append(tile.get_polygon())
+            misc.plot_polygons(multipolygons=MultiPolygon(geometries), title=name)

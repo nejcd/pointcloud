@@ -1,5 +1,6 @@
 import random
 import sys
+from pathlib import Path
 
 import numpy as np
 
@@ -10,10 +11,19 @@ from shapely.geometry import MultiPolygon
 
 class PointCloud:
     def __init__(self, name, workspace, epsg=None, metadata=None, file_format='las', file_format_settings=None):
+        """
+
+        :param name:
+        :param workspace: Path
+        :param epsg:
+        :param metadata:
+        :param file_format:
+        :param file_format_settings:
+        """
         self.file_format_settings = file_format_settings
         self.metadata = metadata
         self.epsg = epsg
-        self.workspace = workspace
+        self.workspace = Path(workspace)
         self.name = name
         self.stats = None
         self.tiles = {}

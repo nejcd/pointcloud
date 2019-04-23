@@ -10,8 +10,8 @@ epsg = '3912'
 metadata = 'Testing pointcloud'
 polygon_1 = Polygon([(27620, 158050), (27630, 158050), (27630, 158060), (27620, 158060)])
 polygon_2 = Polygon([(27620, 158060), (27630, 158060), (27630, 158070), (27620, 158070)])
-tile_name_1 = 'test_data/test_tile_27620_158050.las'
-tile_name_2 = 'test_data/test_tile_27620_158060.las'
+tile_name_1 = 'test_data/test_tile_27620_158050'
+tile_name_2 = 'test_data/test_tile_27620_158060'
 
 
 class ProjectTests(unittest.TestCase):
@@ -74,7 +74,6 @@ class ProjectTests(unittest.TestCase):
         point_cloud = PointCloud(name, workspace, epsg, metadata)
         point_cloud.add_tile(tile_name_1, polygon_1)
 
-        print(point_cloud.get_stats())
         true_res = {'area': 100.0, 'num_points': 10842, 'density': 108.42, 'tiles': 1,
                     'class_frequency': {2: 7386, 3: 3456}}
         self.assertEqual(true_res, point_cloud.get_stats())

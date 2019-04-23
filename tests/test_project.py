@@ -6,6 +6,7 @@ import pointcloud.utils.misc as misc
 from pointcloud.pointcloud import PointCloud
 from pointcloud.project import Project
 from pointcloud.tile import Tile
+from pathlib import PosixPath
 
 project_name = 'Test'
 point_cloud_name = 'p1'
@@ -30,7 +31,8 @@ class ProjectTests(unittest.TestCase):
 
     def test_add_new_pointcloud_and_read_tiles(self):
         project = Project(project_name, workspace=workspace, epsg=epsg)
-        pointcloud = project.add_new_pointcloud(point_cloud_name)
+        pointcloud = project.add_new_pointcloud(point_cloud_name, file_format='las',
+                                                                  file_format_settings=None)
 
         names_polygons = misc.get_names_and_polygons_in_workspace(workspace,
                                                                   settings={'step': 25, 'x_pos': 3, 'y_pos': 4})
@@ -48,7 +50,7 @@ class ProjectTests(unittest.TestCase):
 
     def test_get_project_bbox(self):
         project = Project(project_name, workspace=workspace, epsg=epsg)
-        pointcloud = project.add_new_pointcloud(point_cloud_name)
+        pointcloud = project.add_new_pointcloud(point_cloud_name, file_format='las')
         names_polygons = misc.get_names_and_polygons_in_workspace(workspace,
                                                                   settings={'step': 25, 'x_pos': 3, 'y_pos': 4})
         for data in names_polygons:
@@ -59,7 +61,7 @@ class ProjectTests(unittest.TestCase):
 
     def test_get_stats(self):
         project = Project(project_name, workspace=workspace, epsg=epsg)
-        pointcloud = project.add_new_pointcloud(point_cloud_name)
+        pointcloud = project.add_new_pointcloud(point_cloud_name, file_format='las')
 
         names_polygons = misc.get_names_and_polygons_in_workspace(workspace,
                                                                   settings={'step': 25, 'x_pos': 3, 'y_pos': 4})
@@ -69,9 +71,10 @@ class ProjectTests(unittest.TestCase):
         stats = project.get_stats()
         true_values = {'name': 'Test',
                        'num_pointclouds': 1,
-                       'workspace': 'test_data/',
+                       'workspace': PosixPath('test_data'),
                        'pointclouds': {'p1':
                                            {'area': 186.82999999999998,
+                                            'class_frequency': {2: 17171, 3: 4760},
                                             'num_points': 21931,
                                             'density': 117.38,
                                             'tiles': 2}}}

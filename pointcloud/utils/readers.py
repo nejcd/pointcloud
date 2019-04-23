@@ -1,5 +1,6 @@
 import laspy
 import numpy as np
+from pathlib import Path
 
 
 class LasReader(object):
@@ -30,9 +31,10 @@ class LasReader(object):
         :param filename:
         :return:
         """
-        if filename.split('.')[-1] == self.extension:
+        filename = Path(filename)
+        if filename.suffix == '.' + self.extension:
             return filename
-        return '{0}.{1}'.format(filename, self.extension)
+        return filename.with_suffix('.' + self.extension)
 
     def store(self, path, points, labels=None, features=None):
         """
@@ -120,9 +122,10 @@ class TxtReader(object):
         :param filename:
         :return:
         """
-        if filename.split('.')[-1] == self.extension:
+        filename = Path(filename)
+        if filename.suffix == '.' + self.extension:
             return filename
-        return '{0}.{1}'.format(filename, self.extension)
+        return filename.with_suffix('.' + self.extension)
 
     def store(self, path, points, labels=None, features=None):
         """
@@ -202,9 +205,10 @@ class NpyReader(object):
         :param filename:
         :return:
         """
-        if filename.split('.')[-1] == self.extension:
+        filename = Path(filename)
+        if filename.suffix == '.' + self.extension:
             return filename
-        return '{0}.{1}'.format(filename, self.extension)
+        return filename.with_suffix('.' + self.extension)
 
     def store(self, path, points, labels=None, features=None):
         """
