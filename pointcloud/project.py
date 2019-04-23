@@ -145,7 +145,7 @@ class Project:
         :return:
         """
         print('\nSaving project {0}'.format(self.name))
-        f = open(self.workspace + self.name + self.ext, 'wb')
+        f = open((self.workspace / self.name).with_suffix('.' + self.ext), 'wb')
         pickle.dump(self.__dict__, f, 2)
         f.close()
 
