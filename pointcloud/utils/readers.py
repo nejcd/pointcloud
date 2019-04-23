@@ -137,6 +137,34 @@ class TxtReader(object):
 
         return np.loadtxt(path)
 
+    def get_all(self, path):
+        """
+
+        :param path:
+        :return:
+        """
+        data = self.load_data(path)
+        points = np.vstack((data[:, self.points[0]], data[:, self.points[1]], data[:, self.points[2]])).transpose()
+
+        if self.labels is None:
+            labels = None
+        else:
+            labels = data[:, self.labels[0]]
+
+        if self.features is None:
+            features = None
+        else:
+            features = []
+            for feature in self.features:
+                if features is None:
+                    features = data[:, feature]
+                else:
+                    features = np.vstack((features, data[:, feature]))
+            features = features.transpose()
+
+        return points, labels, features
+
+
     def get_points(self, path):
         """
         :param path:
@@ -229,6 +257,34 @@ class NpyReader(object):
         path = self.validate_filename(path)
 
         return np.load(path)
+
+    def get_all(self, path):
+        """
+
+        :param path:
+        :return:
+        """
+        data = self.load_data(path)
+        points = np.vstack((data[:, self.points[0]], data[:, self.points[1]], data[:, self.points[2]])).transpose()
+
+        if self.labels is None:
+            labels = None
+        else:
+            labels = data[:, self.labels[0]]
+
+        if self.features is None:
+            features = None
+        else:
+            features = []
+            for feature in self.features:
+                if features is None:
+                    features = data[:, feature]
+                else:
+                    features = np.vstack((features, data[:, feature]))
+            features = features.transpose()
+
+        return points, labels, features
+
 
     def get_points(self, path):
         """

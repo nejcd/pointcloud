@@ -13,9 +13,6 @@ class Tile:
         :param polygon (Shapely):
         :param workspace:
         """
-        self.points = None
-        self.labels = None
-        self.features = None
         self.workspace = Path(workspace)
         self.name = name
         self.polygon = polygon
@@ -83,22 +80,16 @@ class Tile:
         return self.density
 
     def get_points(self):
-        if self.points is None:
-            self.points = self.reader.get_points(self.get_path())
-        return self.points
+        return self.reader.get_points(self.get_path())
 
     def get_labels(self):
-        if self.labels is None:
-            self.labels = self.reader.get_labels(self.get_path())
-        return self.labels
+        return self.reader.get_labels(self.get_path())
 
     def get_features(self):
-        if self.features is None:
-            self.features = self.reader.get_features(self.get_path())
-        return self.features
+        return self.reader.get_features(self.get_path())
 
-    def get_data(self):
-        return self.get_points(), self.get_labels(), self.get_features()
+    def get_all(self):
+        return self.reader.get_all(self.get_path())
 
     def get_path(self):
         return self.workspace / self.get_filename()
