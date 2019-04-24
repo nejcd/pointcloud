@@ -21,7 +21,6 @@ def create_train_test_split(names, train=0.8, seed=800815):
     :param seed:
     :return:
     """
-    raise DeprecationWarning('Remove in future versions. (Use misc.create_train_test_split())')
     train_num = int(np.ceil(len(names) * train))
     test_num = int(np.ceil(len(names) * (1 - train)))
     if train_num + test_num != len(names):
