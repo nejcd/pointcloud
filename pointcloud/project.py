@@ -79,7 +79,6 @@ class Project:
         :param delimiter:
         :return:
         """
-        print(PendingDeprecationWarning('Remove in future versions. (Use misc.create_train_test_split())'))
 
         split = cloud_tile_name.split(delimiter)
         cloud_name = split[0]
@@ -165,26 +164,6 @@ class Project:
         f = open((self.workspace / self.name).with_suffix('.' + self.ext), 'wb')
         pickle.dump(self.__dict__, f, 2)
         f.close()
-
-    def create_train_test_split(self, train=0.8, seed=800815):
-        """
-        Create train test split trough point clouds
-        :param train:
-        :param seed:
-        :return:
-        """
-        train_num = int(np.ceil(len(self.pointclouds) * train))
-        test_num = int(np.ceil(len(self.pointclouds) * (1 - train)))
-        if train_num + test_num != len(self.pointclouds):
-            diff = len(self.pointclouds) - (test_num + train_num)
-            test_num = test_num + diff
-
-        random.seed(seed)
-        keys = list(self.pointclouds.keys())
-        random.shuffle(keys)
-        self.train_pointclouds = keys[0:train_num]
-        self.test_pointclouds = keys[train_num:train_num + test_num]
-        return self.train_pointclouds, self.test_pointclouds
 
     def plot_project(self):
         for name, pointcloud in self.pointclouds.items():
