@@ -48,7 +48,7 @@ class LasReader(object):
         point_file = laspy.file.File(path, mode='r')
         labels = np.vstack(point_file.classification)
         point_file.close()
-        return labels.transpose()
+        return labels
 
     def get_features(self, path):
         """
