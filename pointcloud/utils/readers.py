@@ -303,7 +303,7 @@ class NpyReader(object):
             raise Exception('Labels not set')
 
         data = self.load_data(path)
-        labels = data[:, self.labels[0]]
+        labels = data[:, self.labels]
         return labels
 
     def get_features(self, path):

@@ -92,7 +92,7 @@ class Tile:
         return self.reader.get_all(self.get_path())
 
     def get_path(self):
-        return self.workspace / self.get_filename()
+        return self.get_workspace() / self.get_filename()
 
     def calculate_tile_polygon_from_points(self):
         self.polygon = processing.boundary(self.get_points())
