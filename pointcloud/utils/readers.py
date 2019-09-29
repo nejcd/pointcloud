@@ -19,6 +19,14 @@ class LasReader(object):
         self.features = settings['features']
         self.labels = settings['labels']
 
+    def get_all(self, path):
+        """
+        Returns points, labelsand features
+        :param path:
+        :return: points, labels, features
+        """
+        return self.get_points(path), self.get_labels(path), self.get_features(path)
+
     def get_points(self, path):
         """
         :return:
@@ -40,7 +48,7 @@ class LasReader(object):
         point_file = laspy.file.File(path, mode='r')
         labels = np.vstack(point_file.classification)
         point_file.close()
-        return labels
+        return labels.transpose()
 
     def get_features(self, path):
         """
@@ -110,6 +118,8 @@ class LasReader(object):
         file_out.header.scale = [0.01, 0.01, 0.01]
 
         file_out.close()
+
+
 
 
 class TxtReader(object):
@@ -303,7 +313,7 @@ class NpyReader(object):
             raise Exception('Labels not set')
 
         data = self.load_data(path)
-        labels = data[:, self.labels]
+        labels = data[:, self.labels[0]]
         return labels
 
     def get_features(self, path):
