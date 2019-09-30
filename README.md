@@ -12,9 +12,7 @@ Main features:
 * Filtering
 * Clip
 * SubSample
-* Re-tiling
-
-----
+* Tiling
 
 ## Installation
 
