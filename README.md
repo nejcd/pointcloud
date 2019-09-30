@@ -26,4 +26,4 @@ If you are using virtualenv or conda or any other env manager first activate the
 
 ## Example
 
-[Jupyter notebook example](docs/example.html)  
+[Jupyter notebook example](examples/example.ipynb)  
