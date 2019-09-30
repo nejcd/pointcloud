@@ -1,9 +1,10 @@
 # PointClouds
 
-Pointcloud package is there for you to help you work with large point cloud data sets. Main focus is to help and speed
-up development and training for deep learning applications. 
+## Overview 
 
-
+Working with large point clouds that are saved in multiple files can be hard to work with. Main focus of Pointcloud Python Package is to help and speed
+up working with point clouds. 
+ 
 Main features:
 
 * Project management for large projects with multiple files
@@ -13,6 +14,18 @@ Main features:
 * SubSample
 * Re-tiling
 
+----
 
-To install python dependencies install conda envs deeplearning 
+## Installation
 
+To install package run:
+
+```
+python setup.py install
+``` 
+
+If you are using virtualenv or conda or any other env manager first activate the env and then install package.
+
+## Example
+
+[Jupyter notebook example](docs/example.html)  
