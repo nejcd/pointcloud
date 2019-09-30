@@ -1,9 +1,9 @@
-# PointClouds
+# PointCloud Python Package
 
 ## Overview 
 
-Working with large point clouds that are saved in multiple files can be hard to work with. Main focus of Pointcloud Python Package is to help and speed
-up working with point clouds. 
+Working with large point clouds that are saved in multiple files is annoying. There here is small Pointcloud Python Package to help and speed
+up work with point clouds. 
  
 Main features:
 
