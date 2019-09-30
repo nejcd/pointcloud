@@ -11,7 +11,7 @@ setup(
     license='MIT',
     author='Jernej Nejc Dougan',
     author_email='nejc.dougan@gmail.com',
-    url='https://github.com/nejcd',
+    url='https://github.com/nejcd/pointcloud.git',
     keywords='remote sensing lidar point cloud geo spatial',
     packages=find_packages(exclude=["*tests*"]),
     install_requires=[
@@ -20,7 +20,8 @@ setup(
         'scipy',
         'laspy',
         'matplotlib',
-        'descartes'
+        'descartes',
+        'plyfile'
     ],
     scripts=[
         'scripts/extract_classes.py',
