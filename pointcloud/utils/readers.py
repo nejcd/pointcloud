@@ -265,7 +265,6 @@ class NpyReader(object):
         if settings is not None:
             self.set_file_format_settings(settings)
 
-
     def load_data(self, path):
         """
         :param path:
@@ -302,10 +301,9 @@ class NpyReader(object):
                 if features is None:
                     features = np.vstack(data[:, feature]).transpose()
                 else:
-                    features = np.concatenate((features, data[:,  np.vstack(data[:, feature]).transpose()]), axis=0)
+                    features = np.concatenate((features, np.vstack(data[:, feature]).transpose(]), axis=0)
 
         return points, labels, features
-
 
     def get_points(self, path):
         """
