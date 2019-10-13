@@ -301,7 +301,7 @@ class NpyReader(object):
                 if features is None:
                     features = np.vstack(data[:, feature]).transpose()
                 else:
-                    features = np.concatenate((features, np.vstack(data[:, feature]).transpose(]), axis=0)
+                    features = np.concatenate((features, np.vstack(data[:, feature]).transpose()), axis=0)
 
         return points, labels, features
 
