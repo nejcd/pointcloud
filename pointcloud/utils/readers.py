@@ -301,7 +301,7 @@ class NpyReader(object):
                 else:
                     out_features = np.vstack((out_features, data[:, feature]))
 
-        return points, labels, out_features
+        return points, labels, out_features.transpose()
 
     def get_points(self, path):
         """
