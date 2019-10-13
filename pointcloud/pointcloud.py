@@ -35,6 +35,9 @@ class PointCloud:
     def get_name(self):
         return self.name
 
+    def set_file_format_settings(self, file_format_settings):
+        self.file_format_settings = file_format_settings
+
     def set_labels(self, labels):
         self.labels = labels
 
