@@ -73,7 +73,7 @@ class LasReader(object):
 
             if f is not None:
                 if features is None:
-                    features = f
+                    features = np.vstack(f)
                 else:
                     features = np.vstack((features, f))
 

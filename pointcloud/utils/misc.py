@@ -143,10 +143,10 @@ def create_fish_net(bbox, size):
     :param size:
     :return:
     """
-    min_x = bbox[0]
-    min_y = bbox[1]
-    dx = bbox[2] - min_x
-    dy = bbox[3] - min_y
+    min_x = math.ceil(bbox[0])
+    min_y = math.ceil(bbox[1])
+    dx = math.ceil(bbox[2] - min_x)
+    dy = math.ceil(bbox[3] - min_y)
     steps_x = int(math.ceil(dx / size))
     steps_y = int(math.ceil(dy / size))
 
