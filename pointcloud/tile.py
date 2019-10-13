@@ -32,6 +32,9 @@ class Tile:
     def get_name(self):
         return self.name
 
+    def set_file_format_settings(self, file_format_settings):
+        self.reader.set_file_format_settings = file_format_settings
+
     def get_filename(self):
         return '{0}.{1}'.format(self.get_name(), self.reader.extension)
 

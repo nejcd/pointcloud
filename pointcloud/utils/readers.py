@@ -9,15 +9,15 @@ class LasReader(object):
     def __init__(self, settings=None):
         """
 
-        :param Settings: Array of indices where xyz coordinates are located in text file
+        :param points: Array of indices where xyz coordinates are located in text file
         :param labels: Array of index where label is located in text file
         :param features: Array of indices where features are stored in text file
         """
-        if settings is None:
-            settings = {'points': 'scaled', 'features': None, 'labels': True}
-        self.points = settings['points']
-        self.features = settings['features']
-        self.labels = settings['labels']
+        self.points = 'scaled'
+        self.labels = None
+        self.features = None
+        if settings is not None:
+            self.set_file_format_settings(settings)
 
     def get_all(self, path):
         """
@@ -26,6 +26,11 @@ class LasReader(object):
         :return: points, labels, features
         """
         return self.get_points(path), self.get_labels(path), self.get_features(path)
+
+    def set_file_format_settings(self, settings):
+        self.points = settings['points']
+        self.features = settings['features']
+        self.labels = settings['labels']
 
     def get_points(self, path):
         """
@@ -120,20 +125,23 @@ class LasReader(object):
         file_out.close()
 
 
-
-
 class TxtReader(object):
-    extension = 'txt'
 
-    def __init__(self, settings=None):
+    def __init__(self, settings=None, extension='txt'):
         """
 
         :param points: Array of indices where xyz coordinates are located in text file
         :param labels: Array of index where label is located in text file
         :param features: Array of indices where features are stored in text file
         """
-        if settings is None:
-            settings = {'points': [0, 1, 2], 'features': [3, 4, 5], 'labels': [6]}
+        self.extension = extension
+        self.points = [0, 1, 2]
+        self.features = [3, 4, 5]
+        self.labels = [6]
+        if settings is not None:
+            self.set_file_format_settings(settings=settings)
+
+    def set_file_format_settings(self, settings):
         self.points = settings['points']
         self.features = settings['features']
         self.labels = settings['labels']
@@ -173,7 +181,6 @@ class TxtReader(object):
             features = features.transpose()
 
         return points, labels, features
-
 
     def get_points(self, path):
         """
@@ -248,16 +255,16 @@ class NpyReader(object):
 
     def __init__(self, settings=None):
         """
-
         :param points: Array of indices where xyz coordinates are located in text file
         :param labels: Array of index where label is located in text file
         :param features: Array of indices where features are stored in text file
         """
-        if settings is None:
-            settings = {'points': [0, 1, 2], 'features': [3, 4, 5], 'labels': [6]}
-        self.points = settings['points']
-        self.features = settings['features']
-        self.labels = settings['labels']
+        self.points = [0, 1, 2]
+        self.features = [3, 4, 5]
+        self.labels = [6]
+        if settings is not None:
+            self.set_file_format_settings(settings)
+
 
     def load_data(self, path):
         """
@@ -267,6 +274,11 @@ class NpyReader(object):
         path = self.validate_filename(path)
 
         return np.load(path)
+
+    def set_file_format_settings(self, settings):
+        self.points = settings['points']
+        self.features = settings['features']
+        self.labels = settings['labels']
 
     def get_all(self, path):
         """
