@@ -61,11 +61,11 @@ class LasReader(object):
         for feature in self.features:
             f = None
             if feature == 'intensity':
-                f = point_file.intensity
+                f =  np.vstack(point_file.intensity).transpose()
             elif feature == 'num_return':
-                f = point_file.num_returns
+                f =  np.vstack(point_file.num_returns).transpose()
             elif feature == 'return_num':
-                f = point_file.return_num
+                f =  np.vstack(point_file.return_num).transpose()
             elif feature == 'rgb':
                 f = np.vstack((point_file.red, point_file.green, point_file.blue)).transpose()
             elif feature == 'RGB':
@@ -73,9 +73,9 @@ class LasReader(object):
 
             if f is not None:
                 if features is None:
-                    features = np.vstack(f)
+                    features = f
                 else:
-                    features = np.vstack((features, f))
+                    features = np.concatenate((features, f), axis=0)
 
         point_file.close()
         return features.transpose()

@@ -12,6 +12,17 @@ class TestTile(unittest.TestCase):
         points = reader.get_points('test_data/test_tile_27620_158050')
         self.assertEqual((10842, 3), np.shape(points))
 
+    def test_read_las_intensity_and_labels_points(self):
+        reader = readers.LasReader(settings={'points': 'scaled',
+                                                 'labels': True,
+                                                 'features': ['intensity', 'num_return', 'return_num']})
+        points = reader.get_points('test_data/test_tile_27620_158050')
+        labels = reader.get_labels('test_data/test_tile_27620_158050')
+        features = reader.get_features('test_data/test_tile_27620_158050')
+        self.assertEqual((10842, 3), np.shape(points))
+        self.assertEqual((10842, 1), np.shape(labels))
+        self.assertEqual((10842, 3), np.shape(features))
+
     def test_read_txt_points(self):
         reader = readers.TxtReader(settings=file_format_settings)
         points = reader.get_points('test_data/test_tile_27620_158050')
