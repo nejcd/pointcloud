@@ -293,17 +293,15 @@ class NpyReader(object):
         else:
             labels = data[:, self.labels[0]]
 
-        if self.features is None:
-            features = None
-        else:
-            features = []
+        out_features = None
+        if self.features is not None:
             for feature in self.features:
-                if features is None:
-                    features = np.vstack(data[:, feature]).transpose()
+                if out_features is None:
+                    out_features = data[:, feature]
                 else:
-                    features = np.concatenate((features, np.vstack(data[:, feature]).transpose()), axis=0)
+                    out_features = np.vstack((out_features, data[:, feature]))
 
-        return points, labels, features
+        return points, labels, out_features
 
     def get_points(self, path):
         """
