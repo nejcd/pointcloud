@@ -333,7 +333,8 @@ def pyplot_draw_volume(vol, output_filename):
     pyplot_draw_point_cloud(points)
 
 
-def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=None, label_vector=None, features=None, colermap='plasma'):
+def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=None, label_vector=None, features=None,
+            cmap='plasma'):
     """
     Plot some nice point cloud render
 
