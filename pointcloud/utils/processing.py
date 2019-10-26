@@ -29,19 +29,19 @@ def sample_to_target_size(points, target_size, shuffle=True, labels=None, featur
         if features is not None:
             features = np.array(features)[s]
 
-    out = (points[:target_size, :])
+    pout = (points[:target_size, :])
 
     if labels is not None:
-        out += (labels[:target_size])
+        lout = (labels[:target_size])
     else:
-        out += ([])
+        lout = None
 
     if features is not None:
-        out += (features[:target_size])
+        fout = (features[:target_size])
     else:
-        out += ([])
+        fout = None
 
-    return out
+    return pout, lout, fout
 
 
 def scale_points(points, scale):
