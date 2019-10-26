@@ -163,8 +163,9 @@ def compute_normal_from_points(points):
     """
     epsilon = 10e-9
 
-    delaunay_mesh = Delaunay(points, qhull_options='QJ')
+    delaunay_mesh = Delaunay(points[:, 0:2], qhull_options='QJ')
     tris = points[delaunay_mesh.simplices]  ## TODO should every tris be mean centered ?
+
     normals = np.cross(tris[::, 1] - tris[::, 0], tris[::, 2] - tris[::, 0])
 
     lens = np.sqrt(normals[:, 0] ** 2 + normals[:, 1] ** 2 + normals[:, 2] ** 2)
@@ -175,9 +176,10 @@ def compute_normal_from_points(points):
     return np.mean(normals, axis=0)
 
 
-def compute_normals_for_all_points(points, n_size=12):
+def compute_normals_for_all_points(points, n_size=36):
     """
 
+    :param n_size:
     :param points:
     :return:
     """
@@ -189,5 +191,4 @@ def compute_normals_for_all_points(points, n_size=12):
         normals.append(compute_normal_from_points(current_points))
 
     return np.array(normals)
-
 

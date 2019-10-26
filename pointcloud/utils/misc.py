@@ -333,15 +333,26 @@ def pyplot_draw_volume(vol, output_filename):
     pyplot_draw_point_cloud(points)
 
 
-def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=None, label_vector=None):
+def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=None, label_vector=None, features=None, colermap='plasma'):
+    """
+    Plot some nice point cloud render
+
+    :param points:
+    :param max_points:
+    :param title:
+    :param save:
+    :param path:
+    :param labels:
+    :param label_vector:
+    :param features:
+    :param colermap:
+    :return:
+    """
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    color = 'k'
-    label = 'point'
+    points, labels, features = processing.sample_to_target_size(points, max_points, labels=labels, features=features)
 
-    np.random.shuffle(points)
-    plotpoints = points[:max_points, :]
-
+    print(np.shape(points[:,2]), np.shape(features))
     if labels is not None:
         for key, l in labels.items():
             group = []
@@ -349,20 +360,18 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=N
                 point_labels = label_vector
             else:
                 point_labels = plotpoints[:, 3]
-            group = plotpoints[point_labels == int(key)]
+            group = points[point_labels == int(key)]
             color = l['color']
             label = l['name']
             if len(group) > 0:
                 ax.scatter(group[:, 0], group[:, 1], group[:, 2], c=color, label=label)
 
     else:
-        for point in plotpoints:
-            code = 0
-            if len(point) >= 4:
-                color = 'k'
-                label = str(int(point[3]))
+        if features is not None:
 
-            ax.scatter(point[0], point[1], point[2], c=color)
+            ax.scatter([points[:,0]], [points[:,1]], [points[:,2]], c=features/np.max(features), cmap=colermap)
+        else:
+            ax.scatter([points[:,0]], [points[:,1]], [points[:,2]], c=points[:,2]/np.max(points[:,2]), cmap=colermap)
 
     if title:
         ax.set_title(title)
@@ -370,7 +379,8 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=N
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    plt.legend(loc='upper left')
+    if labels is not None:
+        plt.legend(loc='upper left')
     plt.axis('equal')
 
     if save:
@@ -379,7 +389,6 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=N
         plt.savefig('{0}plt_{1}.png'.format(path, title))
     else:
         plt.show()
-
 
 def plot_polygons(multipolygons, title=None):
     """
