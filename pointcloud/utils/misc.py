@@ -333,8 +333,8 @@ def pyplot_draw_volume(vol, output_filename):
     pyplot_draw_point_cloud(points)
 
 
-def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=None, label_vector=None, features=None,
-            cmap='plasma'):
+def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=None, features=None,
+            cmap='plasma', label_names=None):
     """
     Plot some nice point cloud render
 
@@ -354,25 +354,18 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=N
     points, labels, features = processing.sample_to_target_size(points, max_points, labels=labels, features=features)
 
     print(np.shape(points[:,2]), np.shape(features))
-    if labels is not None:
-        for key, l in labels.items():
-            group = []
-            if label_vector:
-                point_labels = label_vector
-            else:
-                point_labels = plotpoints[:, 3]
-            group = points[point_labels == int(key)]
+    if label_names is not None:
+        for key, l in label_names.items():
+            group = points[labels == int(key)]
             color = l['color']
             label = l['name']
             if len(group) > 0:
                 ax.scatter(group[:, 0], group[:, 1], group[:, 2], c=color, label=label)
 
+    elif features is not None:
+        ax.scatter([points[:,0]], [points[:,1]], [points[:,2]], c=features/np.max(features), cmap=cmap)
     else:
-        if features is not None:
-
-            ax.scatter([points[:,0]], [points[:,1]], [points[:,2]], c=features/np.max(features), cmap=colermap)
-        else:
-            ax.scatter([points[:,0]], [points[:,1]], [points[:,2]], c=points[:,2]/np.max(points[:,2]), cmap=colermap)
+        ax.scatter([points[:,0]], [points[:,1]], [points[:,2]], c=points[:,2]/np.max(points[:,2]), cmap=cmap)
 
     if title:
         ax.set_title(title)
