@@ -31,6 +31,7 @@ def create_train_test_split(names, train=0.8, seed=800815):
     random.shuffle(names)
     return names[0:train_num], names[train_num:train_num + test_num]
 
+
 def calculate_polygon_from_filename(file_name, grid_size, x_pos, y_pos):
     """
     :param file_name:

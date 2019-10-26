@@ -11,7 +11,7 @@ Coordinate system and quadrants. Below origin are in paranthes
 
 Copyright Nejc Dougan 2019
 """
-
+import numpy as np
 
 class OctNode:
     def __init__(self, origin, size, data):
@@ -23,7 +23,7 @@ class OctNode:
 
     def getData(self):
         return self.data
-
+k
     def getCount(self):
         return np.shape(self.data)[0]
 

@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.spatial import ConvexHull
+from scipy.spatial import ConvexHull, Delaunay, kdtree
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon
 
@@ -9,6 +9,9 @@ def sample_to_target_size(points, target_size, shuffle=True, labels=None, featur
     Return N (target_size) of data and shuffles it
     Beware original NP Array Gets Shuffled Also!!!!
 
+    :param features:
+    :param seed:
+    :param labels:
     :param points:
     :param target_size:
     :param shuffle:
@@ -26,7 +29,19 @@ def sample_to_target_size(points, target_size, shuffle=True, labels=None, featur
         if features is not None:
             features = np.array(features)[s]
 
-    return points[:target_size, :], labels[:target_size], features[:target_size, :]
+    out = (points[:target_size, :])
+
+    if labels is not None:
+        out += (labels[:target_size])
+    else:
+        out += (None)
+
+    if features is not None:
+        out += (features[:target_size])
+    else:
+        out += (None)
+
+    return out
 
 
 def scale_points(points, scale):
@@ -128,9 +143,51 @@ def clip_by_bbox(points, bbox, labels=None, features=None):
 
 
 def normalize(points):
+    """
+    Points getting mean centered and normalized between -1 and 1
+    :param points:
+    :return:
+    """
     centroid = np.mean(points, axis=0)
     points = points - centroid
     m = np.max(np.sqrt(np.sum(points ** 2, axis=1)))
     points = points / m
     return points
+
+
+def compute_normal_from_points(points):
+    """
+    Computes normal for a point
+    :param points:
+    :return:
+    """
+    epsilon = 10e-9
+
+    delaunay_mesh = Delaunay(points, qhull_options='QJ')
+    tris = points[delaunay_mesh.simplices]  ## TODO should every tris be mean centered ?
+    normals = np.cross(tris[::, 1] - tris[::, 0], tris[::, 2] - tris[::, 0])
+
+    lens = np.sqrt(normals[:, 0] ** 2 + normals[:, 1] ** 2 + normals[:, 2] ** 2)
+    normals[:, 0] /= (lens + epsilon)
+    normals[:, 1] /= (lens + epsilon)
+    normals[:, 2] /= (lens + epsilon)
+
+    return np.mean(normals, axis=0)
+
+
+def compute_normals_for_all_points(points, n_size=12):
+    """
+
+    :param points:
+    :return:
+    """
+    tree = kdtree.KDTree(points)
+    normals = []
+    for point in points:
+        d, i = tree.query(point, k=n_size)
+        current_points = points[i] - point
+        normals.append(compute_normal_from_points(current_points))
+
+    return np.array(normals)
+
 
