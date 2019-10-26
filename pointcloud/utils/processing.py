@@ -34,12 +34,12 @@ def sample_to_target_size(points, target_size, shuffle=True, labels=None, featur
     if labels is not None:
         out += (labels[:target_size])
     else:
-        out += (None)
+        out += ([])
 
     if features is not None:
         out += (features[:target_size])
     else:
-        out += (None)
+        out += ([])
 
     return out
 
