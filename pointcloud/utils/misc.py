@@ -334,7 +334,7 @@ def pyplot_draw_volume(vol, output_filename):
 
 
 def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=None, features=None,
-            cmap='plasma', label_names=None):
+            cmap='plasma', label_names=None, dpi=200, figsize=None, interactive=False):
     """
     Plot some nice point cloud render
 
@@ -349,7 +349,15 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=N
     :param colermap:
     :return:
     """
-    fig = plt.figure()
+    fig = plt.figure(dpi=dpi)
+    if interactive:
+        if figsize:
+            w, h = figsize
+        else:
+            w, h = plt.rcParams['figure.figsize']
+        fig.canvas.layout.height = str(h) + 'in'
+        fig.canvas.layout.width = str(w) + 'in'
+
     ax = fig.add_subplot(111, projection='3d')
     points, labels, features = processing.sample_to_target_size(points, max_points, labels=labels, features=features)
 
@@ -375,7 +383,8 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=N
     ax.set_zlabel('Z')
     if labels is not None:
         plt.legend(loc='upper left')
-    plt.axis('equal')
+    if not interactive:
+        plt.axis('equal')
 
     if save:
         if path is None:
