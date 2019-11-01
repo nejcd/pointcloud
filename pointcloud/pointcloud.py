@@ -54,15 +54,17 @@ class PointCloud:
                                 file_format_settings=self.file_format_settings)
         return self.tiles[name]
 
-    def create_new_tile(self, name, points, labels=None, features=None):
+    def create_new_tile(self, name, points, labels=None, features=None, polygon=None):
         """
+        :param polygon:
         :param features:
         :param labels:
         :param name:
         :param points:
         :return:
         """
-        polygon = processing.boundary(points)
+        if polygon is None:
+            polygon = processing.boundary(points)
         tile = Tile(name, polygon, self.workspace, file_format=self.file_format,
                     file_format_settings=self.file_format_settings)
         tile.set_points(points)

@@ -57,13 +57,13 @@ class Project:
         """
         return self.name
 
-    def get_point_clouds(self):
+    def get_pointclouds(self):
         """
         :rtype: PointCloud
         """
         return self.pointclouds
 
-    def get_point_cloud(self, point_cloud_name):
+    def get_pointcloud(self, point_cloud_name):
         """
         :rtype: PointCloud
         """
