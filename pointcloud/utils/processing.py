@@ -192,3 +192,37 @@ def compute_normals_for_all_points(points, n_size=36):
 
     return np.array(normals)
 
+
+def classify_close_by(points, labels, from_label, to_label, close_to_label, radius, kdTree=None):
+    """
+
+    :param radius:
+    :param close_to_label:
+    :param to_label:
+    :param from_label:
+    :param labels:
+    :param points:
+    :param kdTree:
+    :return:
+    """
+    if kdTree is None:
+        kdTree = kdtree.KDTree(points)
+
+    for i, point_label in enumerate(zip(points, labels)):
+        point = point_label[0]
+        label = point_label[1]
+
+        if label != from_label:
+            continue
+
+        i = kdTree.query_ball_point(point, r=radius)
+        qpoints = points[i]
+        qlabels = labels[i]
+        npoints = qpoints[qlabels == close_to_label]
+
+        if len(npoints) == 0:
+            continue
+
+        labels[i] = to_label
+
+    return labels

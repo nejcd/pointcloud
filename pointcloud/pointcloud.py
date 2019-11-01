@@ -7,6 +7,8 @@ from pointcloud.tile import Tile
 from pointcloud.utils import processing
 from shapely.geometry import MultiPolygon
 
+import multiprocessing as mp
+
 
 class PointCloud:
     def __init__(self, name, workspace, epsg=None, metadata=None, file_format='las', file_format_settings=None):
@@ -81,6 +83,10 @@ class PointCloud:
             return None
 
         return self.tiles[name]
+
+    def get_tiles_iterator(self):
+        for n, tile in self.tiles.items():
+            yield tile
 
     def get_tiles(self):
         return self.tiles
@@ -173,6 +179,13 @@ class PointCloud:
         """
         self.stats = None
 
+    def calculate_single_tile_stats(self, tile):
+        """
+
+        :return:
+        """
+        return round(tile.get_area(), 2), tile.get_number_of_points(), tile.get_point_count_per_class()
+
     def calulcate_stats(self):
         """
         :return:
@@ -184,27 +197,25 @@ class PointCloud:
             'tiles': len(self.tiles),
             'class_frequency': None
         }
-        for name, tile in self.tiles.items():
-            stats['area'] += round(tile.get_area(), 2)
-            stats['num_points'] += tile.get_number_of_points()
-
-        stats['density'] = round(stats['num_points'] / (stats['area'] + 1e-9), 2)
-        stats['class_frequency'] = self.calculate_point_count_per_class()
-
-        return stats
-
-    def calculate_point_count_per_class(self):
         fq = {}
-        for tile_name in list(self.tiles.keys()):
-            tile = self.tiles[tile_name]
-            fq_tile = tile.get_point_count_per_class()
+        pool = mp.Pool(mp.cpu_count())
+        tile_stats = [pool.apply(self.calculate_single_tile_stats, args=(tile,)) for n, tile in self.tiles.items()]
+        pool.close()
 
-            for c, count in fq_tile.items():
+        for tile_stat in tile_stats:
+            stats['area'] += tile_stat[0]
+            stats['num_points'] += tile_stat[1]
+            f = tile_stat[2]
+            for c, count in f.items():
                 if c in fq:
                     fq[int(c)] += count
                 else:
                     fq[int(c)] = count
-        return fq
+
+        stats['density'] = round(stats['num_points'] / (stats['area'] + 1e-9), 2)
+        stats['class_frequency'] = fq
+
+        return stats
 
     def get_intersected_tiles(self, geometry):
         """

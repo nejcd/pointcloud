@@ -1,8 +1,9 @@
 import unittest
 
 import numpy as np
-import pointcloud.utils.processing as processing
 from shapely.geometry import Polygon
+
+import pointcloud.utils.processing as processing
 
 points = np.array([[1, 1, 1],
                    [1, 2, 1],
@@ -77,6 +78,14 @@ class ProjectTests(unittest.TestCase):
         self.assertEqual((2, 3), np.shape(c_points))
         self.assertEqual((2,), np.shape(c_labels))
         self.assertEqual((2, 3), np.shape(c_features))
+
+    def test_classify_close_by(self):
+        new_labels = processing.classify_close_by(points, labels, from_label=0, to_label=1, close_to_label=1, radius=10)
+        new_labels_same = processing.classify_close_by(points, labels, from_label=0, to_label=1, close_to_label=1, radius=9)
+        target_new_labels = np.array([1, 1, 1, 1, 1, 1, 1, 1])
+
+        self.assertEqual(new_labels, target_new_labels)
+        self.assertEqual(new_labels_same, labels)
 
 
 if __name__ == '__main__':

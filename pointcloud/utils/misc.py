@@ -106,7 +106,10 @@ def calculate_polygons(file, polygon_from_filename_settings, settings, reader, w
         polygon = calculate_polygon_from_filename(filename, step, x_pos, y_pos)
     else:
         points = reader.get_points(workspace + filename)
-        polygon = processing.boundary(points)
+        if len(points) == 0:
+            polygon = None
+        else:
+            polygon = processing.boundary(points)
     return {'name': filename, 'polygon': polygon}
 
 

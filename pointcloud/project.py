@@ -87,7 +87,6 @@ class Project:
         tile = cloud.get_tile(tile_name)
         return tile
 
-
     def get_stats(self):
         """
         :return:
@@ -99,8 +98,9 @@ class Project:
                       'num_pointclouds': len(self.pointclouds),
                       'workspace': self.workspace,
                       'pointclouds': {}}
-
+        print('Stats have to be computed this may take a while.')
         for name, pointcloud in self.pointclouds.items():
+            print('Calculating stats for {:}'.format(name))
             self.stats['pointclouds'][name] = pointcloud.get_stats()
 
         return self.stats
