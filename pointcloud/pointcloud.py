@@ -50,6 +50,7 @@ class PointCloud:
 
         self.tiles[name] = Tile(name, polygon=polygon, workspace=self.workspace, file_format=self.file_format,
                                 file_format_settings=self.file_format_settings)
+        return self.tiles[name]
 
     def create_new_tile(self, name, points, labels=None, features=None):
         """
@@ -70,7 +71,7 @@ class PointCloud:
             tile.set_features(features)
 
         tile.store()
-        self.add_tile(name, polygon)
+        return self.add_tile(name, polygon)
 
     def number_of_tiles(self):
         return len(self.tiles)
