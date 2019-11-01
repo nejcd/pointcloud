@@ -12,6 +12,8 @@ from shapely.geometry import Polygon, MultiPolygon
 from pointcloud.utils import processing, readers
 from pointcloud.utils.eulerangles import euler2mat
 
+import multiprocessing as mp
+
 
 def create_train_test_split(names, train=0.8, seed=800815):
     """
@@ -76,21 +78,36 @@ def get_names_and_polygons_in_workspace(workspace, settings=None, polygon_from_f
         raise Exception('Not supported file format')
     files = glob.glob(workspace + "/*." + reader.extension)
 
-    out = []
     if len(files) == 0:
         raise UserWarning('No files in current workspace')
-    for file in files:
-        filename = file.split('/')[-1]
-        filename = filename.split('.')[0]
-        if polygon_from_filename_settings is not None:
-            step, x_pos, y_pos = get_polygon_from_file_settings(settings)
-            polygon = calculate_polygon_from_filename(filename, step, x_pos, y_pos)
-        else:
-            points = reader.get_points(workspace + filename)
-            polygon = processing.boundary(points)
-        out.append({'name': filename, 'polygon': polygon})
 
+    pool = mp.Pool(mp.cpu_count())
+
+    out = [pool.apply(calculate_polygons, args=(file, polygon_from_filename_settings, settings, reader, workspace))
+           for file in files]
+    pool.close()
     return out
+
+
+def calculate_polygons(file, polygon_from_filename_settings, settings, reader, workspace):
+    """
+
+    :param file:
+    :param polygon_from_filename_settings:
+    :param settings:
+    :param reader:
+    :param workspace:
+    :return:
+    """
+    filename = file.split('/')[-1]
+    filename = filename.split('.')[0]
+    if polygon_from_filename_settings is not None:
+        step, x_pos, y_pos = get_polygon_from_file_settings(settings)
+        polygon = calculate_polygon_from_filename(filename, step, x_pos, y_pos)
+    else:
+        points = reader.get_points(workspace + filename)
+        polygon = processing.boundary(points)
+    return {'name': filename, 'polygon': polygon}
 
 
 def get_polygon_from_file_settings(settings):
