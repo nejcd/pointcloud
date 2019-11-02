@@ -226,3 +226,16 @@ def classify_close_by(points, labels, from_label, to_label, close_to_label, radi
         labels[i] = to_label
 
     return labels
+
+
+def remap_labels(labels, mappings):
+    """
+
+    :param labels:
+    :param mappings:
+    :return:
+    """
+    for source, target in mappings.items():
+        labels[labels == source] = target
+
+    return labels

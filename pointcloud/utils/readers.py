@@ -1,112 +1,124 @@
+import functools
+from pathlib import Path
+
 import laspy
 import numpy as np
-from pathlib import Path
+
+_cache_size = 2048
 
 
 class LasReader(object):
     extension = 'las'
 
-    def __init__(self, settings=None):
+    def __init__(self, path=None, settings=None):
         """
 
-        :param points: Array of indices where xyz coordinates are located in text file
-        :param labels: Array of index where label is located in text file
-        :param features: Array of indices where features are stored in text file
+        :param path:
+        :param settings:
         """
+
+        self.path = path
+
+        filename = Path(path)
+        if filename.suffix == '.' + self.extension:
+            self.filename = filename
+        else:
+            self.filename = filename.with_suffix('.' + self.extension)
+
         self.points = 'scaled'
         self.labels = None
         self.features = None
-        if settings is not None:
-            self.set_file_format_settings(settings)
 
-    def get_all(self, path):
+        if settings is not None:
+            self.points = settings['points']
+            self.features = settings['features']
+            self.labels = settings['labels']
+
+    # @functools.lru_cache(maxsize=_cache_size)
+    def load_data(self, path):
         """
-        Returns points, labelsand features
-        :param path:
+        :return:
+        """
+        with laspy.file.File(path, mode='r') as file:
+            if self.points == 'scaled':
+                points = np.vstack((file.x, file.y, file.z)).transpose()
+            else:
+                points = np.vstack((file.X, file.Y, file.Z)).transpose()
+
+            labels = np.vstack(file.classification)
+
+            features = None
+            for feature in self.features:
+                f = None
+                if feature == 'intensity':
+                    f = np.vstack(file.intensity).transpose()
+                elif feature == 'num_return':
+                    f = np.vstack(file.num_returns).transpose()
+                elif feature == 'return_num':
+                    f = np.vstack(file.return_num).transpose()
+                elif feature == 'rgb':
+                    f = np.vstack((file.red, file.green, file.blue)).transpose()
+                elif feature == 'RGB':
+                    f = np.vstack((file.Red, file.Green, file.Blue)).transpose()
+
+                if f is not None:
+                    if features is None:
+                        features = f
+                    else:
+                        features = np.concatenate((features, f), axis=0)
+
+        return points, labels, features.transpose()
+
+    def get_all(self, path=None):
+        """
+        Returns points, labels and features
         :return: points, labels, features
         """
-        return self.get_points(path), self.get_labels(path), self.get_features(path)
+        if path is None:
+            path = self.path
 
-    def set_file_format_settings(self, settings):
-        self.points = settings['points']
-        self.features = settings['features']
-        self.labels = settings['labels']
+        return self.load_data(path)
 
-    def get_points(self, path):
+    def get_points(self, path=None):
         """
         :return:
         """
-        path = self.validate_filename(path)
-        point_file = laspy.file.File(path, mode='r')
-        if self.points == 'scaled':
-            points = np.vstack((point_file.x, point_file.y, point_file.z)).transpose()
-        else:
-            points = np.vstack((point_file.X, point_file.Y, point_file.Z)).transpose()
-        point_file.close()
+        if path is None:
+            path = self.path
+
+        points, _, _ = self.load_data(path)
         return points
 
-    def get_labels(self, path):
+    def get_labels(self, path=None):
         """
         :return:
         """
-        path = self.validate_filename(path)
-        point_file = laspy.file.File(path, mode='r')
-        labels = np.vstack(point_file.classification)
-        point_file.close()
+        if path is None:
+            path = self.path
+
+        _, labels, _ = self.load_data(path)
         return labels
 
-    def get_features(self, path):
+    def get_features(self, path=None):
         """
         :return:
         """
-        path = self.validate_filename(path)
-        point_file = laspy.file.File(path, mode='r')
+        if path is None:
+            path = self.path
 
-        features = None
-        for feature in self.features:
-            f = None
-            if feature == 'intensity':
-                f = np.vstack(point_file.intensity).transpose()
-            elif feature == 'num_return':
-                f = np.vstack(point_file.num_returns).transpose()
-            elif feature == 'return_num':
-                f = np.vstack(point_file.return_num).transpose()
-            elif feature == 'rgb':
-                f = np.vstack((point_file.red, point_file.green, point_file.blue)).transpose()
-            elif feature == 'RGB':
-                f = np.vstack((point_file.Red, point_file.Green, point_file.Blue)).transpose()
+        _, _, features = self.load_data(path)
+        return features
 
-            if f is not None:
-                if features is None:
-                    features = f
-                else:
-                    features = np.concatenate((features, f), axis=0)
-
-        point_file.close()
-        return features.transpose()
-
-    def validate_filename(self, filename):
+    def store(self, points, labels=None, features=None):
         """
-        :param filename:
-        :return:
-        """
-        filename = Path(filename)
-        if filename.suffix == '.' + self.extension:
-            return filename
-        return filename.with_suffix('.' + self.extension)
-
-    def store(self, path, points, labels=None, features=None):
-        """
-        :param path:
         :param points:
         :param labels:
         :param features:
         :return:
         """
-        path = self.validate_filename(path)
         header = laspy.header.Header()
 
-        file_out = laspy.file.File(path, mode='w', header=header)
+        file_out = laspy.file.File(self.path, mode='w', header=header)
         file_out.X = np.ndarray.astype(points[:, 0] * 100,
                                        dtype=int)  # TODO DO NICER :) ALSO HANDLE WHOLE HEADER STUFF ETC!
         file_out.Y = np.ndarray.astype(points[:, 1] * 100, dtype=int)
@@ -127,89 +139,82 @@ class LasReader(object):
 
 class TxtReader(object):
 
-    def __init__(self, settings=None, extension='txt'):
+    def __init__(self, path=None, settings=None, extension='txt'):
         """
 
-        :param points: Array of indices where xyz coordinates are located in text file
-        :param labels: Array of index where label is located in text file
-        :param features: Array of indices where features are stored in text file
+        :param path:
+        :param settings:
+        :param extension:
         """
         self.extension = extension
+        self.path = path
+
+        filename = Path(path)
+        if filename.suffix == '.' + self.extension:
+            self.filename = filename
+        else:
+            self.filename = filename.with_suffix('.' + self.extension)
+
         self.points = [0, 1, 2]
         self.features = [3, 4, 5]
         self.labels = [6]
         if settings is not None:
-            self.set_file_format_settings(settings=settings)
+            self.points = settings['points']
+            self.features = settings['features']
+            self.labels = settings['labels']
 
-    def set_file_format_settings(self, settings):
-        self.points = settings['points']
-        self.features = settings['features']
-        self.labels = settings['labels']
-
+    @functools.lru_cache(maxsize=_cache_size)
     def load_data(self, path):
         """
         :param path:
         :return:
         """
-        path = self.validate_filename(path)
-
         return np.loadtxt(path)
 
-    def get_all(self, path):
+    def get_all(self, path=None):
         """
 
-        :param path:
         :return:
         """
-        data = self.load_data(path)
-        points = np.vstack((data[:, self.points[0]], data[:, self.points[1]], data[:, self.points[2]])).transpose()
+        if path is None:
+            path = self.path
 
-        if self.labels is None:
-            labels = None
-        else:
-            labels = data[:, self.labels[0]]
+        return self.get_points(path), self.get_labels(path), self.get_features(path)
 
-        if self.features is None:
-            features = None
-        else:
-            features = []
-            for feature in self.features:
-                if features is None:
-                    features = data[:, feature]
-                else:
-                    features = np.vstack((features, data[:, feature]))
-            features = features.transpose()
-
-        return points, labels, features
-
-    def get_points(self, path):
+    def get_points(self, path=None):
         """
         :param path:
         :return:
         """
+        if path is None:
+            path = self.path
         data = self.load_data(path)
         points = np.vstack((data[:, self.points[0]], data[:, self.points[1]], data[:, self.points[2]])).transpose()
         return points
 
-    def get_labels(self, path):
+    def get_labels(self, path=None):
         """
         :return:
         """
         if self.labels is None:
             raise Exception('Labels not set')
-
+        if path is None:
+            path = self.path
         data = self.load_data(path)
         labels = data[:, self.labels[0]]
         return labels
 
-    def get_features(self, path):
+    def get_features(self, path=None):
         """
         :return:
         """
         if self.features is None:
             raise Exception('Features not set')
 
-        data = self.load_data(path)
+        if path is None:
+            path = self.path
+
+        data = self.load_data(self.path)
         features = None
         for feature in self.features:
             if features is None:
@@ -219,25 +224,13 @@ class TxtReader(object):
 
         return features.transpose()
 
-    def validate_filename(self, filename):
+    def store(self, points, labels=None, features=None):
         """
-        :param filename:
-        :return:
-        """
-        filename = Path(filename)
-        if filename.suffix == '.' + self.extension:
-            return filename
-        return filename.with_suffix('.' + self.extension)
-
-    def store(self, path, points, labels=None, features=None):
-        """
-        :param path:
         :param points:
         :param labels:
         :param features:
         :return:
         """
-        path = self.validate_filename(path)
 
         data = points
 
@@ -247,89 +240,82 @@ class TxtReader(object):
         if labels is not None:
             data = np.hstack((data, np.array([labels]).transpose()))
 
-        np.savetxt(path, data)
+        np.savetxt(self.path, data)
 
 
 class NpyReader(object):
     extension = 'npy'
 
-    def __init__(self, settings=None):
+    def __init__(self, path=None, settings=None):
         """
-        :param points: Array of indices where xyz coordinates are located in text file
-        :param labels: Array of index where label is located in text file
-        :param features: Array of indices where features are stored in text file
+
+        :param path:
+        :param settings:
         """
+
+        self.path = path
+
+        filename = Path(path)
+        if filename.suffix == '.' + self.extension:
+            self.filename = filename
+        else:
+            self.filename = filename.with_suffix('.' + self.extension)
         self.points = [0, 1, 2]
         self.features = [3, 4, 5]
         self.labels = [6]
         if settings is not None:
-            self.set_file_format_settings(settings)
+            self.points = settings['points']
+            self.features = settings['features']
+            self.labels = settings['labels']
 
+    @functools.lru_cache(maxsize=_cache_size)
     def load_data(self, path):
         """
         :param path:
         :return:
         """
-        path = self.validate_filename(path)
 
         return np.load(path)
 
-    def set_file_format_settings(self, settings):
-        self.points = settings['points']
-        self.features = settings['features']
-        self.labels = settings['labels']
-
-    def get_all(self, path):
+    def get_all(self, path=None):
         """
 
-        :param path:
         :return:
         """
-        data = self.load_data(path)
-        points = np.vstack((data[:, self.points[0]], data[:, self.points[1]], data[:, self.points[2]])).transpose()
+        if path is None:
+            path = self.path
+        return self.get_points(path), self.get_labels(path), self.get_features(path)
 
-        if self.labels is None:
-            labels = None
-        else:
-            labels = data[:, self.labels[0]]
-
-        out_features = None
-        if self.features is not None:
-            for feature in self.features:
-                if out_features is None:
-                    out_features = data[:, feature]
-                else:
-                    out_features = np.vstack((out_features, data[:, feature]))
-
-        return points, labels, out_features.transpose()
-
-    def get_points(self, path):
+    def get_points(self, path=None):
         """
-        :param path:
         :return:
         """
+        if path is None:
+            path = self.path
         data = self.load_data(path)
         points = np.vstack((data[:, self.points[0]], data[:, self.points[1]], data[:, self.points[2]])).transpose()
         return points
 
-    def get_labels(self, path):
+    def get_labels(self, path=None):
         """
         :return:
         """
         if self.labels is None:
             raise Exception('Labels not set')
-
+        if path is None:
+            path = self.path
         data = self.load_data(path)
         labels = data[:, self.labels[0]]
         return labels
 
-    def get_features(self, path):
+    def get_features(self, path=None):
         """
         :return:
         """
         if self.features is None:
             raise Exception('Features not set')
-
+        if path is None:
+            path = self.path
         data = self.load_data(path)
         features = None
         for feature in self.features:
@@ -340,26 +326,13 @@ class NpyReader(object):
 
         return features.transpose()
 
-    def validate_filename(self, filename):
+    def store(self, points, labels=None, features=None):
         """
-        :param filename:
-        :return:
-        """
-        filename = Path(filename)
-        if filename.suffix == '.' + self.extension:
-            return filename
-        return filename.with_suffix('.' + self.extension)
-
-    def store(self, path, points, labels=None, features=None):
-        """
-        :param path:
         :param points:
         :param labels:
         :param features:
         :return:
         """
-        path = self.validate_filename(path)
-
         data = points
 
         if features is not None:
@@ -368,4 +341,4 @@ class NpyReader(object):
         if labels is not None:
             data = np.hstack((data, np.array([labels]).transpose()))
 
-        np.save(path, data)
+        np.save(self.path, data)

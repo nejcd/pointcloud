@@ -21,7 +21,8 @@ setup(
         'laspy',
         'matplotlib',
         'descartes',
-        'plyfile'
+        'plyfile',
+        'geojson'
     ],
     scripts=[
         'scripts/extract_classes.py',

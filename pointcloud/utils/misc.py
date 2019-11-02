@@ -1,9 +1,11 @@
 import glob
 import math
+import multiprocessing as mp
+import random
 
+import geojson
 import matplotlib.pyplot as plt
 import numpy as np
-import random
 from descartes.patch import PolygonPatch
 from matplotlib import pyplot
 from plyfile import PlyData, PlyElement
@@ -11,8 +13,6 @@ from shapely.geometry import Polygon, MultiPolygon
 
 from pointcloud.utils import processing, readers
 from pointcloud.utils.eulerangles import euler2mat
-
-import multiprocessing as mp
 
 
 def create_train_test_split(names, train=0.8, seed=800815):
@@ -83,8 +83,12 @@ def get_names_and_polygons_in_workspace(workspace, settings=None, polygon_from_f
 
     pool = mp.Pool(mp.cpu_count())
 
-    out = [pool.apply(calculate_polygons, args=(file, polygon_from_filename_settings, settings, reader, workspace))
-           for file in files]
+    out_async = [pool.apply_async(calculate_polygons,
+                                  args=(file, polygon_from_filename_settings, settings, reader, workspace))
+                 for file in files]
+    out = []
+    for o in out_async:
+        out.append(o.get())
     pool.close()
     return out
 
@@ -358,6 +362,11 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=N
     """
     Plot some nice point cloud render
 
+    :param interactive:
+    :param figsize:
+    :param dpi:
+    :param cmap:
+    :param label_names:
     :param points:
     :param max_points:
     :param title:
@@ -381,7 +390,6 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=N
     ax = fig.add_subplot(111, projection='3d')
     points, labels, features = processing.sample_to_target_size(points, max_points, labels=labels, features=features)
 
-    print(np.shape(points[:,2]), np.shape(features))
     if label_names is not None:
         for key, l in label_names.items():
             group = points[labels == int(key)]
@@ -391,9 +399,9 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=N
                 ax.scatter(group[:, 0], group[:, 1], group[:, 2], c=color, label=label)
 
     elif features is not None:
-        ax.scatter([points[:,0]], [points[:,1]], [points[:,2]], c=features/np.max(features), cmap=cmap)
+        ax.scatter([points[:, 0]], [points[:, 1]], [points[:, 2]], c=features / np.max(features), cmap=cmap)
     else:
-        ax.scatter([points[:,0]], [points[:,1]], [points[:,2]], c=points[:,2]/np.max(points[:,2]), cmap=cmap)
+        ax.scatter([points[:, 0]], [points[:, 1]], [points[:, 2]], c=points[:, 2] / np.max(points[:, 2]), cmap=cmap)
 
     if title:
         ax.set_title(title)
@@ -432,3 +440,85 @@ def plot_polygons(multipolygons, title=None):
         ax.add_patch(patch)
 
     pyplot.show()
+
+
+def project_save_polygons(project):
+    """
+
+    :param project: project
+    :return:
+    """
+    for pc_name, pointcloud in project.get_pointclouds().items():
+        features = []
+
+        for tile_name, tile in pointcloud.get_tiles().items():
+            features.append(geojson.Feature(geometry=tile.get_polygon(), properties={"tile_name": tile_name}))
+
+        feature_collection = geojson.FeatureCollection(features)
+        with open("{:}/{:}_proj.geojson".format(pointcloud.get_workspace(), pc_name), 'w') as f:
+            geojson.dump(feature_collection, f)
+
+
+def _reclassify_cloud_and_create_new_cloud(tile, mappings):
+    """
+
+    :param tile:
+    :return:
+    """
+    print('Processing tile {:}'.format(tile.get_name()))
+    points, labels, features = tile.get_all()
+    new_labels = processing.remap_labels(labels, mappings)
+    return points, new_labels, features, tile
+
+
+def reclassify_cloud_and_create_new_cloud(origin_cloud, target_cloud, mappings):
+    """
+
+    :type origin_cloud: PointCloud
+    :type target_cloud: PointCloud
+    :param origin_cloud:
+    :param target_cloud:
+    :param mappings:
+    :return:
+    """
+
+    pool = mp.Pool(mp.cpu_count())
+
+    tiles = [pool.apply_async(_reclassify_cloud_and_create_new_cloud, args=(tile, mappings,)) for _, tile in
+             origin_cloud.get_tiles().items()]
+
+    for tile in tiles:
+        t = tile.get()
+        target_cloud.create_new_tile(t[3].get_name(), t[0], labels=np.squeeze(t[1]), features=t[2],
+                                     polygon=t[3].get_polygon())
+    pool.close()
+    print('Done')
+
+
+def compute_normals_for_tile(tile):
+    """
+
+    :param tile:
+    :return:
+    """
+    print('Processing normals for tile {:}'.format(tile.get_name()))
+    points, labels, features = tile.get_all()
+    normals = processing.compute_normals_for_all_points(points)
+    features = np.concatenate([features, normals], axis=1)
+    tile.store(points, labels, features)
+    return normals, tile.get_name()
+
+
+def compute_normals_for_pointcloud(pointcloud):
+    """
+
+    :type pointcloud: PointCloud
+    :param pointcloud:
+    :return:
+    """
+    pool = mp.Pool(mp.cpu_count())
+
+    [pool.apply_async(compute_normals_for_tile, args=(tile,)) for _, tile in
+     pointcloud.get_tiles().items()]
+    pool.close()
+    print('Done')

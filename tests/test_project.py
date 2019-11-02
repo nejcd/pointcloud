@@ -4,7 +4,7 @@ from pathlib import PosixPath
 import numpy as np
 import pointcloud.utils.misc as misc
 from pointcloud.pointcloud import PointCloud
-from pointcloud.project import Project
+from pointcloud.project import Project, save_project, load_project
 from pointcloud.tile import Tile
 
 project_name = 'Test'
@@ -89,15 +89,14 @@ class ProjectTests(unittest.TestCase):
         for data in names_polygons:
             pointcloud.add_tile(data['name'], data['polygon'])
 
-        project.save()
+        save_project(project)
 
-        project_load = Project(project_name, workspace=workspace, epsg=epsg)
-        project_load.load()
+        project_load = load_project(workspace + project_name + '.prj')
 
         self.assertEqual(project.get_name(), project_load.get_name())
 
-        c0 = project.get_point_cloud(point_cloud_name)
-        c1 = project_load.get_point_cloud(point_cloud_name)
+        c0 = project.get_pointcloud(point_cloud_name)
+        c1 = project_load.get_pointcloud(point_cloud_name)
         for data in names_polygons:
             t0 = c0.get_tile(data['name'])
             t1 = c1.get_tile(data['name'])

@@ -1,58 +1,82 @@
+import multiprocessing as mp
 import random
 import sys
 from pathlib import Path
 
 import numpy as np
-from pointcloud.tile import Tile
-from pointcloud.utils import processing
 from shapely.geometry import MultiPolygon
 
-import multiprocessing as mp
+from pointcloud.tile import Tile
+from pointcloud.utils import processing
 
 
 class PointCloud:
-    def __init__(self, name, workspace, epsg=None, metadata=None, file_format='las', file_format_settings=None):
+    def __init__(self, name, workspace, epsg=None, file_format='las', file_format_settings=None,
+                 labels_descriptions=None):
         """
 
         :param name:
         :param workspace: Path
         :param epsg:
-        :param metadata:
         :param file_format:
         :param file_format_settings:
         """
-        self.file_format_settings = file_format_settings
-        self.metadata = metadata
-        self.epsg = epsg
-        self.workspace = Path(workspace)
         self.name = name
-        self.stats = None
+        self.workspace = Path(workspace)
+        self.epsg = epsg
         self.tiles = {}
-        self.polygons = None
-        self.train_tiles = {}
-        self.test_tiles = {}
-        self.labels = {}
+        self.stats = None
+        self.labels_descriptions = labels_descriptions
         self.file_format = file_format
+        self.file_format_settings = file_format_settings
+
+    def meta_data(self):
+        return {
+            'epsg': self.epsg,
+            'workspace': str(self.workspace),
+            'name': self.name,
+            'stats': self.stats,
+            'labels_descriptions': self.labels_descriptions,
+            'file_format_settings': self.file_format_settings,
+            'file_format': self.file_format,
+            'tiles': [tile.meta_data() for _, tile in self.tiles.items()]
+        }
+
+    def get_workspace(self):
+        return self.workspace
 
     def get_name(self):
         return self.name
 
     def set_file_format_settings(self, file_format_settings):
         self.file_format_settings = file_format_settings
+        for _, tile in self.tiles.items():
+            tile.set_file_format_settings(file_format_settings)
 
-    def set_labels(self, labels):
-        self.labels = labels
+    def get_labels_descriptions(self):
+        return self.labels_descriptions
 
-    def get_labels(self):
-        return self.labels
+    def add_new_tile(self, name, polygon=None):
+        """
 
-    def add_tile(self, name, polygon=None):
-        if name is self.tiles:
+        :param polygon:
+        :param name:
+        :return:
+        """
+        tile = Tile(name, polygon=polygon, workspace=self.workspace, file_format=self.file_format,
+                    file_format_settings=self.file_format_settings)
+        self.add_tile(tile)
+        return tile
+
+    def add_tile(self, tile):
+        """
+
+        :param tile:
+        :return:
+        """
+        if tile.get_name() is self.tiles:
             raise ValueError('Tile with that name already exists')
-
-        self.tiles[name] = Tile(name, polygon=polygon, workspace=self.workspace, file_format=self.file_format,
-                                file_format_settings=self.file_format_settings)
-        return self.tiles[name]
+        self.tiles[tile.get_name()] = tile
 
     def create_new_tile(self, name, points, labels=None, features=None, polygon=None):
         """
@@ -67,15 +91,10 @@ class PointCloud:
             polygon = processing.boundary(points)
         tile = Tile(name, polygon, self.workspace, file_format=self.file_format,
                     file_format_settings=self.file_format_settings)
-        tile.set_points(points)
 
-        if labels is not None:
-            tile.set_labels(labels)
-        if features is not None:
-            tile.set_features(features)
-
-        tile.store()
-        return self.add_tile(name, polygon)
+        tile.store(points=points, labels=labels, features=features)
+        self.add_tile(tile)
+        return tile
 
     def number_of_tiles(self):
         return len(self.tiles)
@@ -151,6 +170,14 @@ class PointCloud:
             if tile.get_number_of_points() < number_of_points:
                 del self.tiles[tile_name]
 
+    def remove_tile(self, name):
+        """
+
+        :param name:
+        :return:
+        """
+        del self.tiles[name]
+
     def calculate_tile_polygons_from_points(self):
         """
         Recalculate polygons around points
@@ -186,10 +213,12 @@ class PointCloud:
 
         :return:
         """
+        print('Calculating stats for tile {:}'.format(tile.get_name()))
         return round(tile.get_area(), 2), tile.get_number_of_points(), tile.get_point_count_per_class()
 
     def calulcate_stats(self):
         """
+        TODO This should go to misc or somewhere alike
         :return:
         """
         stats = {
@@ -201,10 +230,11 @@ class PointCloud:
         }
         fq = {}
         pool = mp.Pool(mp.cpu_count())
-        tile_stats = [pool.apply(self.calculate_single_tile_stats, args=(tile,)) for n, tile in self.tiles.items()]
+        tile_stats_async = [pool.apply_async(self.calculate_single_tile_stats, args=(tile,)) for n, tile in self.tiles.items()]
         pool.close()
 
-        for tile_stat in tile_stats:
+        for tile_stat_async in tile_stats_async:
+            tile_stat = tile_stat_async.get()
             stats['area'] += tile_stat[0]
             stats['num_points'] += tile_stat[1]
             f = tile_stat[2]
@@ -216,6 +246,7 @@ class PointCloud:
 
         stats['density'] = round(stats['num_points'] / (stats['area'] + 1e-9), 2)
         stats['class_frequency'] = fq
+        print('Done')
 
         return stats
 

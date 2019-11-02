@@ -1,13 +1,55 @@
+import json
 import os
 import pickle
-import random
 from pathlib import Path
-
-import numpy as np
 from shapely.geometry import MultiPolygon
+import shapely.wkt
 
 from pointcloud.pointcloud import PointCloud
+from pointcloud.tile import Tile
 from pointcloud.utils import misc
+import gc
+
+
+def save_project(project):
+    """
+
+    :type project: Project
+    :param project:
+    :return:
+    """
+    with open('{:}/{:}.prj'.format(project.get_workspace(), project.get_name()), 'w') as outfile:
+        json.dump(project.meta_data(), outfile)
+
+
+def load_project(project_file_path):
+    """
+
+    :param project_file_path:
+    :return:
+    """
+    with open(project_file_path, 'r') as read:
+        p = json.load(read)
+
+    project = Project(project_name=p['name'], epsg=p['epsg'], workspace=p['workspace'])
+
+    for c in p['pointclouds']:
+        pointcloud = PointCloud(name=c['name'], workspace=c['workspace'], file_format=c['file_format'],
+                                file_format_settings=c['file_format_settings'],
+                                labels_descriptions=c.get('labels_descriptions', None))
+        project.add_pointcloud(pointcloud)
+        for t in c['tiles']:
+            polygon = None
+            if t['polygon'] is not None:
+                polygon = shapely.wkt.loads(t['polygon'])
+
+            tile = Tile(name=t['name'], polygon=polygon, workspace=t['workspace'],
+                        file_format=t.get('file_format', c['file_format']),
+                        file_format_settings=t.get('file_format_settings', c['file_format_settings']), area=t.get('area', None),
+                        density=t.get('density', None), number_of_points=t.get('number_of_points', None))
+            pointcloud.add_tile(tile)
+
+    return project
 
 
 class Project:
@@ -18,7 +60,6 @@ class Project:
         :param project_name:
         :param epsg: 
         :param workspace: 
-        :param pointcloud: 
         """
         self.name = project_name
         self.workspace = Path(workspace)
@@ -28,9 +69,28 @@ class Project:
         self.test_pointclouds = None
         self.stats = None
 
-    def add_new_pointcloud(self, name, folder=None, file_format=None, file_format_settings=None):
+    def get_workspace(self):
+        return self.workspace
+
+    def meta_data(self):
+        """
+
+        :return:
+        """
+        return {
+            'name': self.name,
+            'workspace': str(self.workspace),
+            'epsg': self.epsg,
+            'stats': self.stats,
+            'pointclouds': [cloud.meta_data() for _, cloud in self.pointclouds.items()]
+        }
+
+    def add_new_pointcloud(self, name, workspace=None, folder=None, file_format=None,
+                           file_format_settings=None, labels_descriptions=None):
         """
         Adds PointClouds to project
+        :param workspace:
+        :param labels_descriptions:
         :param file_format_settings:
         :param file_format:
         :param name:
@@ -40,16 +100,31 @@ class Project:
         if name is self.pointclouds:
             raise ValueError('PointCloud with that name already exists')
 
-        if folder is None:
-            path = self.workspace
-        else:
-            path = self.workspace / folder
-            if not os.path.exists(path):
-                os.makedirs(path)
+        if workspace is None:
+            if folder is None:
+                workspace = self.workspace
+            else:
+                workspace = self.workspace / folder
+                if not os.path.exists(workspace):
+                    os.makedirs(workspace)
 
-        self.pointclouds[name] = PointCloud(name, path, self.epsg, file_format=file_format,
-                                            file_format_settings=file_format_settings)
-        return self.pointclouds[name]
+        pointcloud = PointCloud(name, workspace, self.epsg, file_format=file_format,
+                                file_format_settings=file_format_settings, labels_descriptions=labels_descriptions)
+
+        self.add_pointcloud(pointcloud)
+
+        return pointcloud
+
+    def add_pointcloud(self, pointcloud):
+        """
+        :type pointcloud: PointCloud
+        :param pointcloud:
+        :return:
+        """
+        if pointcloud.get_name() is self.pointclouds:
+            raise ValueError('Pointcloud with that name already exists')
+
+        self.pointclouds[pointcloud.get_name()] = pointcloud
 
     def get_name(self):
         """
@@ -83,7 +158,7 @@ class Project:
         split = cloud_tile_name.split(delimiter)
         cloud_name = split[0]
         tile_name = split[1]
-        cloud = self.get_point_cloud(cloud_name)
+        cloud = self.get_pointcloud(cloud_name)
         tile = cloud.get_tile(tile_name)
         return tile
 
@@ -102,6 +177,7 @@ class Project:
         for name, pointcloud in self.pointclouds.items():
             print('Calculating stats for {:}'.format(name))
             self.stats['pointclouds'][name] = pointcloud.get_stats()
+            gc.collect()
 
         return self.stats
 
@@ -148,22 +224,13 @@ class Project:
         f.close()
 
         self.__dict__.update(tmp_dict)
+        raise DeprecationWarning('Use load_project()')
 
     def get_project_file_name(self):
         """
         :return:
         """
         return self.workspace / '{0}.{1}'.format(self.name, self.ext)
-
-    def save(self):
-        """
-        Save project
-        :return:
-        """
-        print('\nSaving project {0}'.format(self.name))
-        f = open((self.workspace / self.name).with_suffix('.' + self.ext), 'wb')
-        pickle.dump(self.__dict__, f, 2)
-        f.close()
 
     def plot_project(self):
         for name, pointcloud in self.pointclouds.items():
