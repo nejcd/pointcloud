@@ -67,7 +67,7 @@ class LasReader(object):
                     else:
                         features = np.concatenate((features, f), axis=0)
 
-        return points, np.squeeze(labels), features.transpose()
+        return points, np.array(np.squeeze(labels), dtype=np.int32), features.transpose()
 
     def get_all(self, path=None):
         """

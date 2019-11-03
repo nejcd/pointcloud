@@ -411,8 +411,8 @@ def plot_3d(points, max_points=1000, title=None, save=False, path=None, labels=N
     ax.set_zlabel('Z')
     if labels is not None:
         plt.legend(loc='upper left')
-    if not interactive:
-        plt.axis('equal')
+    # if not interactive:
+    #     plt.axis('equal')
 
     if save:
         if path is None:
@@ -532,7 +532,7 @@ def calculate_single_tile_stats(tile):
     print('Calculating stats for tile {:}'.format(tile.get_name()))
     points, labels, features = tile.get_all()
     tile.set_number_of_points(len(points))
-    point_count_per_class = processing.point_count_per_class(labels)
+    point_count_per_class = processing.point_count_per_class(labels.astype(int))
     return round(tile.get_area(), 2), tile.get_number_of_points(), point_count_per_class
 
 
