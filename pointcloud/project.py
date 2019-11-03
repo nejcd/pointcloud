@@ -172,12 +172,7 @@ class Project:
         self.stats = {'name': self.name,
                       'num_pointclouds': len(self.pointclouds),
                       'workspace': self.workspace,
-                      'pointclouds': {}}
-        print('Stats have to be computed this may take a while.')
-        for name, pointcloud in self.pointclouds.items():
-            print('Calculating stats for {:}'.format(name))
-            self.stats['pointclouds'][name] = pointcloud.get_stats()
-            gc.collect()
+                      'pointclouds': [cloud.get_stats() for _, cloud in self.pointclouds.items()]}
 
         return self.stats
 

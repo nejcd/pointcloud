@@ -197,9 +197,11 @@ class PointCloud:
         :return:
         """
         if self.stats is None:
-            self.stats = self.calulcate_stats()
-
+            print('Stats not calculated for this pointcloud.')
         return self.stats
+
+    def set_stats(self, stats):
+        self.stats = stats
 
     def reset_stats(self):
         """
@@ -207,48 +209,6 @@ class PointCloud:
         :return:
         """
         self.stats = None
-
-    def calculate_single_tile_stats(self, tile):
-        """
-
-        :return:
-        """
-        print('Calculating stats for tile {:}'.format(tile.get_name()))
-        return round(tile.get_area(), 2), tile.get_number_of_points(), tile.get_point_count_per_class()
-
-    def calulcate_stats(self):
-        """
-        TODO This should go to misc or somewhere alike
-        :return:
-        """
-        stats = {
-            'area': 0,
-            'num_points': 0,
-            'density': 0,
-            'tiles': len(self.tiles),
-            'class_frequency': None
-        }
-        fq = {}
-        pool = mp.Pool(mp.cpu_count())
-        tile_stats_async = [pool.apply_async(self.calculate_single_tile_stats, args=(tile,)) for n, tile in self.tiles.items()]
-        pool.close()
-
-        for tile_stat_async in tile_stats_async:
-            tile_stat = tile_stat_async.get()
-            stats['area'] += tile_stat[0]
-            stats['num_points'] += tile_stat[1]
-            f = tile_stat[2]
-            for c, count in f.items():
-                if c in fq:
-                    fq[int(c)] += count
-                else:
-                    fq[int(c)] = count
-
-        stats['density'] = round(stats['num_points'] / (stats['area'] + 1e-9), 2)
-        stats['class_frequency'] = fq
-        print('Done')
-
-        return stats
 
     def get_intersected_tiles(self, geometry):
         """

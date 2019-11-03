@@ -522,3 +522,45 @@ def compute_normals_for_pointcloud(pointcloud):
      pointcloud.get_tiles().items()]
     pool.close()
     print('Done')
+
+
+def calculate_single_tile_stats(tile):
+    """
+    TODO this should be also exploded into per tiles functions
+    :return:
+    """
+    print('Calculating stats for tile {:}'.format(tile.get_name()))
+    points, labels, features = tile.get_all()
+    tile.set_number_of_points(len(points))
+    point_count_per_class = processing.point_count_per_class(labels)
+    return round(tile.get_area(), 2), tile.get_number_of_points(), point_count_per_class
+
+
+def calulcate_stats(pointcloud):
+    """
+    :type pointcloud: PointCloud
+    :return:
+    """
+    tiles = pointcloud.get_tiles()
+    stats = {}
+    fq = {}
+    pool = mp.Pool(mp.cpu_count())
+    tile_stats_async = [pool.apply_async(calculate_single_tile_stats, args=(tile,)) for n, tile in tiles.items()]
+    pool.close()
+    stats['area'] = 0
+    stats['num_points'] = 0
+    for tile_stat_async in tile_stats_async:
+        tile_stat = tile_stat_async.get()
+        stats['area'] += tile_stat[0]
+        stats['num_points'] += tile_stat[1]
+        f = tile_stat[2]
+        for c, count in f.items():
+            if c in fq:
+                fq[int(c)] += count
+            else:
+                fq[int(c)] = count
+    stats['tiles'] = len(tiles)
+    stats['density'] = round(stats['num_points'] / (stats['area'] + 1e-9), 2)
+    stats['class_frequency'] = fq
+    print('Done')
+    return stats

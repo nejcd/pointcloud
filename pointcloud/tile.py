@@ -117,20 +117,6 @@ class Tile:
         """
         return self.polygon
 
-    def get_point_count_per_class(self):
-        """
-
-        :return:
-        """
-        labels = self.get_labels()
-        classes = np.unique(labels)
-
-        fq = {}
-        for c in classes:
-            fq[c] = (labels == c).sum()
-
-        return fq
-
     def get_number_of_points(self):
         """
 
@@ -140,6 +126,9 @@ class Tile:
             points = self.get_points()
             self.number_of_points = len(points)
         return self.number_of_points
+
+    def set_number_of_points(self, number):
+        self.number_of_points = number
 
     def get_density(self):
         """

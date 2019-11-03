@@ -241,18 +241,23 @@ def remap_labels(labels, mappings):
     return labels
 
 
-def point_count_per_class(labels, number_of_classes=100):
+def point_count_per_class(int[:] labels, int number_of_classes = 100):
     """
 
     :return:
     """
+    cdef int n = labels.shape[0]
+    cdef int[:] fq = np.zeros(number_of_classes)
 
-    fq = np.zeros(number_of_classes)
-    for label in labels:
-        fq[label] += 1
+    for i in range(n):
+        try:
+            label = labels[i]
+            fq[label] += 1
+        except TypeError:
+            print(label)
+            continue
 
     return fq
 
-
 def test():
-    print('Hello from Python')
+    print('Hello from C')
