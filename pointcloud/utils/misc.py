@@ -511,7 +511,7 @@ def project_save_polygons(project):
             geojson.dump(feature_collection, f)
 
 
-def _reclassify_cloud_and_create_new_cloud(tile, mappings):
+def _reclassify_cloud_and_create_new_cloud(tile, mappings, target_cloud):
     """
 
     :param tile:
@@ -528,7 +528,11 @@ def _reclassify_cloud_and_create_new_cloud(tile, mappings):
     ############################
 
     new_labels = processing.remap_labels(labels, mappings)
-    return points, new_labels, features, tile
+
+    target_cloud.create_new_tile(tile.get_name(), points=points, labels=np.squeeze(new_labels), features=features,
+                                 polygon=tile.get_polygon())
+
+    return tile
 
 
 def reclassify_cloud_and_create_new_cloud(origin_cloud, target_cloud, mappings):
@@ -546,6 +550,7 @@ def reclassify_cloud_and_create_new_cloud(origin_cloud, target_cloud, mappings):
     all_tiles = origin_cloud.get_tiles().items()
     tiles_to_process = []
     for name, tile in all_tiles:
+        target_cloud.add_new_tile(name, polygon=tile.get_polygon())
         if os.path.isfile("{:}/{:}.npz".format(target_cloud.get_workspace(), name)):
             continue
         tiles_to_process.append(tile)
@@ -557,10 +562,7 @@ def reclassify_cloud_and_create_new_cloud(origin_cloud, target_cloud, mappings):
     print('\nSkipping {:} of {:}'.format(len(all_tiles) - len(tiles), len(all_tiles)))
     print('Starting to process {:} files'.format(len(tiles)))
     for i, tile in enumerate(tiles):
-        t = tile.get()
-        target_cloud.create_new_tile(t[3].get_name(), t[0], labels=np.squeeze(t[1]), features=t[2],
-                                     polygon=t[3].get_polygon())
-        gc.collect()
+        tile.get()
         dt = time.time() - t0
         avg_time_per_tile = dt / (i + 1)
         eta = avg_time_per_tile * (len(tiles) - i)
