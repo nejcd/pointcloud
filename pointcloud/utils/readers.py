@@ -8,22 +8,23 @@ _cache_size = 2048
 
 
 class LasReader(object):
-    extension = 'las'
 
-    def __init__(self, path=None, settings=None):
+    def __init__(self, path=None, settings=None, extension='las'):
         """
 
         :param path:
         :param settings:
         """
+        self.extension = extension
 
         self.path = path
 
-        filename = Path(path)
-        if filename.suffix == '.' + self.extension:
-            self.filename = filename
-        else:
-            self.filename = filename.with_suffix('.' + self.extension)
+        if path is not None:
+            filename = Path(path)
+            if filename.suffix == '.' + self.extension:
+                self.filename = filename
+            else:
+                self.filename = filename.with_suffix('.' + self.extension)
 
         self.points = 'scaled'
         self.labels = None
@@ -33,6 +34,9 @@ class LasReader(object):
             self.points = settings['points']
             self.features = settings['features']
             self.labels = settings['labels']
+
+    def get_extension(self):
+        return self.extension
 
     # @functools.lru_cache(maxsize=_cache_size)
     def load_data(self, path):
@@ -46,8 +50,7 @@ class LasReader(object):
                 points = np.vstack((file.X, file.Y, file.Z)).transpose()
 
             labels = np.vstack(file.classification)
-
-            features = None
+            out_features = None
             for feature in self.features:
                 f = None
                 if feature == 'intensity':
@@ -62,12 +65,12 @@ class LasReader(object):
                     f = np.vstack((file.Red, file.Green, file.Blue)).transpose()
 
                 if f is not None:
-                    if features is None:
-                        features = f
+                    if out_features is None:
+                        out_features = f
                     else:
-                        features = np.concatenate((features, f), axis=0)
+                        out_features = np.concatenate((out_features, f), axis=0)
 
-        return points, np.array(np.squeeze(labels), dtype=np.int32), features.transpose()
+        return points, np.array(np.squeeze(labels), dtype=np.int32), out_features.transpose()
 
     def get_all(self, path=None):
         """
@@ -75,7 +78,7 @@ class LasReader(object):
         :return: points, labels, features
         """
         if path is None:
-            path = self.path
+            path = self.filename
 
         return self.load_data(path)
 
@@ -84,7 +87,7 @@ class LasReader(object):
         :return:
         """
         if path is None:
-            path = self.path
+            path = self.filename
 
         points, _, _ = self.load_data(path)
         return points
@@ -104,21 +107,24 @@ class LasReader(object):
         :return:
         """
         if path is None:
-            path = self.path
+            path = self.filename
 
         _, _, features = self.load_data(path)
         return features
 
-    def store(self, points, labels=None, features=None):
+    def store(self, points, labels=None, features=None, path=None):
         """
+        :param path:
         :param points:
         :param labels:
         :param features:
         :return:
         """
         header = laspy.header.Header()
+        if path is None:
+            path = self.filename
 
-        file_out = laspy.file.File(self.path, mode='w', header=header)
+        file_out = laspy.file.File(path, mode='w', header=header)
         file_out.X = np.ndarray.astype(points[:, 0] * 100,
                                        dtype=int)  # TODO DO NICER :) ALSO HANDLE WHOLE HEADER STUFF ETC!
         file_out.Y = np.ndarray.astype(points[:, 1] * 100, dtype=int)
@@ -162,6 +168,9 @@ class TxtReader(object):
             self.points = settings['points']
             self.features = settings['features']
             self.labels = settings['labels']
+
+    def get_extension(self):
+        return self.extension
 
     @functools.lru_cache(maxsize=_cache_size)
     def load_data(self, path):
@@ -244,15 +253,14 @@ class TxtReader(object):
 
 
 class NpyReader(object):
-    extension = 'npy'
 
-    def __init__(self, path=None, settings=None):
+    def __init__(self, path=None, settings=None, extension='npy'):
         """
 
         :param path:
         :param settings:
         """
-
+        self.extension = extension
         self.path = path
 
         filename = Path(path)
@@ -268,14 +276,21 @@ class NpyReader(object):
             self.features = settings['features']
             self.labels = settings['labels']
 
+    def get_extension(self):
+        return self.extension
+
     @functools.lru_cache(maxsize=_cache_size)
     def load_data(self, path):
         """
         :param path:
         :return:
         """
+        data = np.load(path)
 
-        return np.load(path)
+        if self.extension == 'npz':
+            data = data['pc']
+
+        return data
 
     def get_all(self, path=None):
         """
@@ -336,9 +351,12 @@ class NpyReader(object):
         data = points
 
         if features is not None:
-            data = np.hstack((data, features))
+            data = np.concatenate((data, features), axis=1)
 
         if labels is not None:
-            data = np.hstack((data, np.array([labels]).transpose()))
+            data = np.concatenate((data, np.reshape(labels, (np.shape(labels)[0], 1))), axis=1)
 
-        np.save(self.path, data)
+        if self.extension == 'npz':
+            np.savez_compressed(self.path, pc=data)
+        else:
+            np.save(self.path, data)

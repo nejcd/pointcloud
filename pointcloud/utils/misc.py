@@ -1,11 +1,14 @@
+import multiprocessing as mp
+import sys
+import gc
+import geojson
 import glob
 import math
-import multiprocessing as mp
-import random
-
-import geojson
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import random
+import time
 from descartes.patch import PolygonPatch
 from matplotlib import pyplot
 from plyfile import PlyData, PlyElement
@@ -59,8 +62,9 @@ def calculate_polygon_from_filename(file_name, grid_size, x_pos, y_pos):
 
 
 def get_names_and_polygons_in_workspace(workspace, settings=None, polygon_from_filename_settings=None,
-                                        file_format='las', file_format_settings=None):
+                                        file_format='las', file_format_settings=None, multiproc=False):
     """
+    :param multiproc:
     :param file_format_settings:
     :param file_format:
     :param workspace: Path to workspace
@@ -68,29 +72,75 @@ def get_names_and_polygons_in_workspace(workspace, settings=None, polygon_from_f
     :param polygon_from_filename_settings:
     :return:
     """
-    if file_format == 'las':
-        reader = readers.LasReader(settings=file_format_settings)
+    if file_format == 'las' or file_format == 'laz':
+        reader = readers.LasReader(settings=file_format_settings, extension=file_format)
     elif file_format == 'txt':
         reader = readers.TxtReader(settings=file_format_settings)
     elif file_format == 'npy':
         reader = readers.NpyReader(settings=file_format_settings)
     else:
         raise Exception('Not supported file format')
-    files = glob.glob(workspace + "/*." + reader.extension)
+    files = glob.glob(workspace + "/*." + reader.get_extension())
 
     if len(files) == 0:
         raise UserWarning('No files in current workspace')
 
-    pool = mp.Pool(mp.cpu_count())
+    t0 = time.time()
 
-    out_async = [pool.apply_async(calculate_polygons,
-                                  args=(file, polygon_from_filename_settings, settings, reader, workspace))
-                 for file in files]
-    out = []
-    for o in out_async:
-        out.append(o.get())
-    pool.close()
+    if multiproc:
+        pool = mp.Pool(mp.cpu_count())
+        out_async = [pool.apply_async(get_polygons,
+                                      args=(file, polygon_from_filename_settings, settings, reader, workspace))
+                     for file in files]
+        out = []
+        for i, o in enumerate(out_async):
+            out.append(o.get())
+
+            dt = time.time() - t0
+            avg_time_per_tile = dt / (i + 1)
+            eta = avg_time_per_tile * (len(files) - i)
+            sys.stdout.write(
+                '\rProcessing ({:}/{:}) - total time: {:.2f} min - awg_time_per_tile: {:.2f} min; ETA: {:.2f} min\n'.
+                format(i + 1, len(files), dt / 60, avg_time_per_tile / 60, eta / 60))
+            sys.stdout.flush()
+        pool.close()
+    else:
+        out = [get_polygons(file, polygon_from_filename_settings, settings, reader, workspace) for file in files]
+
     return out
+
+
+def get_polygons(file, polygon_from_filename_settings, settings, reader, workspace):
+    """
+
+    :param file:
+    :param polygon_from_filename_settings:
+    :param settings:
+    :param reader:
+    :param workspace:
+    :return:
+    """
+    filename = file.split('/')[-1]
+    filename = filename.split('.')[0]
+    polygon_file = '{:}/{:}.geojson'.format(workspace, filename)
+
+    if os.path.isfile(polygon_file):
+        # print('Reading stored one')
+        with open(polygon_file, 'r') as f:
+            gj = geojson.load(f)
+        if gj['features'][0]['geometry'] is None:
+            geom = None
+        else:
+            geom = Polygon(gj['features'][0]['geometry']['coordinates'][0])
+        return ({'name': gj['features'][0]['properties']['name'],
+                 'polygon': geom})
+
+    polygon = calculate_polygons(file, polygon_from_filename_settings, settings, reader, workspace)
+    with open(polygon_file, 'w') as f:
+        features = [geojson.Feature(geometry=polygon['polygon'], properties={"name": polygon['name']})]
+        feature_collection = geojson.FeatureCollection(features)
+        geojson.dump(feature_collection, f)
+    return polygon
 
 
 def calculate_polygons(file, polygon_from_filename_settings, settings, reader, workspace):
@@ -105,12 +155,14 @@ def calculate_polygons(file, polygon_from_filename_settings, settings, reader, w
     """
     filename = file.split('/')[-1]
     filename = filename.split('.')[0]
+
     if polygon_from_filename_settings is not None:
         step, x_pos, y_pos = get_polygon_from_file_settings(settings)
         polygon = calculate_polygon_from_filename(filename, step, x_pos, y_pos)
     else:
-        points = reader.get_points(workspace + filename)
-        if len(points) == 0:
+        points = reader.get_points(workspace + filename + '.laz')
+        if np.shape(points)[0] < 3:
+            print('Skipping (not enough points)')
             polygon = None
         else:
             polygon = processing.boundary(points)
@@ -465,8 +517,16 @@ def _reclassify_cloud_and_create_new_cloud(tile, mappings):
     :param tile:
     :return:
     """
-    print('Processing tile {:}'.format(tile.get_name()))
     points, labels, features = tile.get_all()
+
+    #### REMOVE THIS ####
+    # TODO
+    remove = [labels != 0]
+    points = points[remove]
+    labels = labels[remove]
+    features = features[remove]
+    ############################
+
     new_labels = processing.remap_labels(labels, mappings)
     return points, new_labels, features, tile
 
@@ -481,16 +541,33 @@ def reclassify_cloud_and_create_new_cloud(origin_cloud, target_cloud, mappings):
     :param mappings:
     :return:
     """
-
+    print('\n------------\nClassify\n')
     pool = mp.Pool(mp.cpu_count())
+    all_tiles = origin_cloud.get_tiles().items()
+    tiles_to_process = []
+    for name, tile in all_tiles:
+        if os.path.isfile("{:}/{:}.npz".format(target_cloud.get_workspace(), name)):
+            continue
+        tiles_to_process.append(tile)
 
-    tiles = [pool.apply_async(_reclassify_cloud_and_create_new_cloud, args=(tile, mappings,)) for _, tile in
-             origin_cloud.get_tiles().items()]
+    tiles = [pool.apply_async(_reclassify_cloud_and_create_new_cloud, args=(tile, mappings, target_cloud,)) for tile in
+             tiles_to_process]
 
-    for tile in tiles:
+    t0 = time.time()
+    print('\nSkipping {:} of {:}'.format(len(all_tiles) - len(tiles), len(all_tiles)))
+    print('Starting to process {:} files'.format(len(tiles)))
+    for i, tile in enumerate(tiles):
         t = tile.get()
         target_cloud.create_new_tile(t[3].get_name(), t[0], labels=np.squeeze(t[1]), features=t[2],
                                      polygon=t[3].get_polygon())
+        gc.collect()
+        dt = time.time() - t0
+        avg_time_per_tile = dt / (i + 1)
+        eta = avg_time_per_tile * (len(tiles) - i)
+        sys.stdout.write('\rProcessing {:}/{:}; total time: {:.2f} min; awg_tile: {:.2f} min; ETA: {:.2f} min\n'.
+                         format(i + 1, len(tiles), dt/60, avg_time_per_tile/60, eta/60))
+        sys.stdout.flush()
+
     pool.close()
     print('Done')
 

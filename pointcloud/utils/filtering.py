@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def by_label(pointcloud, labels, label):
+def by_label_is_equal(pointcloud, labels, label):
     """
 
     :param pointcloud:

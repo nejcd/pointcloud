@@ -35,8 +35,6 @@ setup(
         'geojson'
     ],
     scripts=[
-        'scripts/extract_classes.py',
-        'scripts/multipolygon.py',
     ],
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',

@@ -23,12 +23,12 @@ class Tile:
         self.file_format = file_format
         self.file_format_settings = file_format_settings
 
-        if self.file_format == 'las':
-            self.reader = readers.LasReader(path=self.get_path(), settings=file_format_settings)
+        if self.file_format == 'las' or self.file_format == 'laz':
+            self.reader = readers.LasReader(path=self.get_path(), settings=file_format_settings, extension=self.file_format)
         elif self.file_format == 'txt':
             self.reader = readers.TxtReader(path=self.get_path(), settings=file_format_settings)
-        elif self.file_format == 'npy':
-            self.reader = readers.NpyReader(path=self.get_path(), settings=file_format_settings)
+        elif self.file_format == 'npy' or self.file_format == 'npz':
+            self.reader = readers.NpyReader(path=self.get_path(), settings=file_format_settings, extension=self.file_format)
         else:
             raise Exception('File format not supported')
 
@@ -61,12 +61,12 @@ class Tile:
         :return:
         """
         self.file_format_settings = file_format_settings
-        if self.file_format == 'las':
-            self.reader = readers.LasReader(path=self.get_path(), settings=file_format_settings)
+        if self.file_format == 'las' or self.file_format == 'laz':
+            self.reader = readers.LasReader(path=self.get_path(), settings=file_format_settings, extension=self.file_format)
         elif self.file_format == 'txt':
             self.reader = readers.TxtReader(path=self.get_path(), settings=file_format_settings)
-        elif self.file_format == 'npy':
-            self.reader = readers.NpyReader(path=self.get_path(), settings=file_format_settings)
+        elif self.file_format == 'npy' or self.file_format == 'npz':
+            self.reader = readers.NpyReader(path=self.get_path(), settings=file_format_settings, extension=self.file_format)
 
     def get_filename(self):
         """

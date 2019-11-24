@@ -44,6 +44,24 @@ def sample_to_target_size(points, target_size, shuffle=True, labels=None, featur
     return pout, lout, fout
 
 
+def remove_label(points, labels, label, features=None):
+    """
+    :param points:
+    :param features:
+    :param labels:
+    :param label:
+    :return:
+    """
+    remove = [labels != label]
+
+    if features is not None:
+        fout = features[remove]
+    else:
+        fout = None
+
+    return points[remove], labels[remove], fout
+
+
 def scale_points(points, scale):
     """
     Scales Points

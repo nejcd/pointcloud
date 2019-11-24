@@ -43,6 +43,23 @@ def sample_to_target_size(points, target_size, shuffle=True, labels=None, featur
 
     return pout, lout, fout
 
+def remove_label(points, labels, label, features=None):
+    """
+    :param points:
+    :param features:
+    :param labels:
+    :param label:
+    :return:
+    """
+    remove = [labels != label]
+
+    if features is not None:
+        fout = features[remove]
+    else:
+        fout = None
+
+    return points[remove], labels[remove], fout
+
 
 def scale_points(points, scale):
     """
@@ -93,6 +110,7 @@ def boundary(points, show=False):
     :param show:
     :return:
     """
+    print(points)
     hull = ConvexHull(points[:, 0:2])
     vertices = np.zeros([len(hull.vertices), 2])
     for i, vertex in enumerate(hull.vertices):
