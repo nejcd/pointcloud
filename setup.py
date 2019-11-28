@@ -32,7 +32,8 @@ setup(
         'matplotlib',
         'descartes',
         'plyfile',
-        'geojson'
+        'geojson',
+        'sklearn'
     ],
     scripts=[
     ],

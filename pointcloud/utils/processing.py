@@ -254,7 +254,7 @@ def remap_labels(labels, mappings):
     :return:
     """
     for source, target in mappings.items():
-        labels[labels == source] = target
+        labels[labels == int(source)] = target
 
     return labels
 
@@ -268,6 +268,8 @@ def point_count_per_class(labels, number_of_classes=100):
     fq = np.zeros(number_of_classes)
     for label in labels:
         fq[label] += 1
+
+    #TODO np.unique(labels, return_counts=True)
 
     return fq
 

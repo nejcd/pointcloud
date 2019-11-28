@@ -245,19 +245,21 @@ def classify_close_by(points, labels, from_label, to_label, close_to_label, radi
 
     return labels
 
-
-def remap_labels(labels, mappings):
-    """
-
-    :param labels:
-    :param mappings:
-    :return:
-    """
-    for source, target in mappings.items():
-        labels[labels == source] = target
-
-    return labels
-
+#
+# def remap_labels(labels, mappings):
+#     """
+#
+#     :param labels:
+#     :param mappings:
+#     :return:
+#     """
+#     labels = np.array(labels)
+#     print(np.unique(labels, return_counts=True))
+#     for source, target in mappings.items():
+#         labels[labels == int(source)] = target
+#     print(np.unique(labels, return_counts=True))
+#
+#     return remap_labels()
 
 def point_count_per_class(int[:] labels, int number_of_classes = 100):
     """
@@ -276,6 +278,3 @@ def point_count_per_class(int[:] labels, int number_of_classes = 100):
             continue
 
     return fq
-
-def test():
-    print('Hello from C')

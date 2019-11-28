@@ -13,6 +13,10 @@ from descartes.patch import PolygonPatch
 from matplotlib import pyplot
 from plyfile import PlyData, PlyElement
 from shapely.geometry import Polygon, MultiPolygon
+from sklearn.neighbors import KDTree
+from os.path import exists, join, isfile
+from os import makedirs
+import pickle
 
 from pointcloud.utils import processing, readers
 from pointcloud.utils.eulerangles import euler2mat
@@ -518,16 +522,18 @@ def _reclassify_cloud_and_create_new_cloud(tile, mappings, target_cloud):
     :return:
     """
     points, labels, features = tile.get_all()
-
     #### REMOVE THIS ####
     # TODO
     remove = [labels != 0]
-    points = points[remove]
-    labels = labels[remove]
-    features = features[remove]
+    points = points[tuple(remove)]
+    labels = labels[tuple(remove)]
+    features = features[tuple(remove)]
     ############################
 
     new_labels = processing.remap_labels(labels, mappings)
+
+    if np.shape(points)[0] < 3:
+        return None
 
     target_cloud.create_new_tile(tile.get_name(), points=points, labels=np.squeeze(new_labels), features=features,
                                  polygon=tile.get_polygon())
@@ -535,7 +541,7 @@ def _reclassify_cloud_and_create_new_cloud(tile, mappings, target_cloud):
     return tile
 
 
-def reclassify_cloud_and_create_new_cloud(origin_cloud, target_cloud, mappings):
+def reclassify_cloud_and_create_new_cloud(origin_cloud, target_cloud, mappings, multi_process=True):
     """
 
     :type origin_cloud: PointCloud
@@ -546,7 +552,6 @@ def reclassify_cloud_and_create_new_cloud(origin_cloud, target_cloud, mappings):
     :return:
     """
     print('\n------------\nClassify\n')
-    pool = mp.Pool(mp.cpu_count())
     all_tiles = origin_cloud.get_tiles().items()
     tiles_to_process = []
     for name, tile in all_tiles:
@@ -555,11 +560,69 @@ def reclassify_cloud_and_create_new_cloud(origin_cloud, target_cloud, mappings):
             continue
         tiles_to_process.append(tile)
 
-    tiles = [pool.apply_async(_reclassify_cloud_and_create_new_cloud, args=(tile, mappings, target_cloud,)) for tile in
-             tiles_to_process]
+    if multi_process:
+        pool = mp.Pool(mp.cpu_count())
+        tiles = [pool.apply_async(_reclassify_cloud_and_create_new_cloud, args=(tile, mappings, target_cloud,)) for tile in
+                 tiles_to_process]
+
+        t0 = time.time()
+        print('\nSkipping {:} of {:}'.format(len(all_tiles) - len(tiles), len(all_tiles)))
+        print('Starting to process {:} files'.format(len(tiles)))
+        for i, tile in enumerate(tiles):
+            tile.get()
+            dt = time.time() - t0
+            avg_time_per_tile = dt / (i + 1)
+            eta = avg_time_per_tile * (len(tiles) - i)
+            sys.stdout.write('\rProcessing {:}/{:}; total time: {:.2f} min; awg_tile: {:.2f} min; ETA: {:.2f} min\n'.
+                             format(i + 1, len(tiles), dt/60, avg_time_per_tile/60, eta/60))
+            sys.stdout.flush()
+        pool.close()
+    else:
+        [_reclassify_cloud_and_create_new_cloud(tile, mappings, target_cloud) for tile in tiles_to_process]
+    print('Done')
+
+
+def create_and_save_kd_tree_for_tile(tile, tree_path, leaf_size=50):
+    """
+
+    :param leaf_size:
+    :param tile:
+    :return:
+    """
+
+    KDTree_file = join(tree_path, '{:s}_KDTree.pkl'.format(tile.get_name()))
+
+    if os.path.isfile(KDTree_file):
+        return
+
+    points = tile.get_points()
+
+    try:
+        tree = KDTree(points, leaf_size=leaf_size)
+    except Exception:
+        return None
+
+    # Save KDTree
+    with open(KDTree_file, 'wb') as f:
+        pickle.dump(tree, f)
+
+
+def create_and_save_kd_tree_for_cloud(cloud, leaf_size=50):
+    """
+
+    :param leaf_size:
+    :param cloud:
+    :return:
+    """
+    print('\n------------\nStart generating KD Trees (This may take a while)\n')
+    tree_path = join(cloud.get_workspace(), 'kd_trees_{:}'.format(leaf_size))
+    if not exists(tree_path):
+        makedirs(tree_path)
+
+    pool = mp.Pool(mp.cpu_count())
+    tiles = [pool.apply_async(create_and_save_kd_tree_for_tile, args=(tile, tree_path, leaf_size,)) for _, tile in cloud.get_tiles().items()]
 
     t0 = time.time()
-    print('\nSkipping {:} of {:}'.format(len(all_tiles) - len(tiles), len(all_tiles)))
     print('Starting to process {:} files'.format(len(tiles)))
     for i, tile in enumerate(tiles):
         tile.get()
@@ -569,7 +632,6 @@ def reclassify_cloud_and_create_new_cloud(origin_cloud, target_cloud, mappings):
         sys.stdout.write('\rProcessing {:}/{:}; total time: {:.2f} min; awg_tile: {:.2f} min; ETA: {:.2f} min\n'.
                          format(i + 1, len(tiles), dt/60, avg_time_per_tile/60, eta/60))
         sys.stdout.flush()
-
     pool.close()
     print('Done')
 
