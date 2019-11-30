@@ -619,13 +619,14 @@ def create_and_save_kd_tree_for_cloud(cloud, leaf_size=50):
     if not exists(tree_path):
         makedirs(tree_path)
 
-    pool = mp.Pool(mp.cpu_count())
+    pool = mp.Pool(mp.cpu_count()-1)
     tiles = [pool.apply_async(create_and_save_kd_tree_for_tile, args=(tile, tree_path, leaf_size,)) for _, tile in cloud.get_tiles().items()]
 
     t0 = time.time()
     print('Starting to process {:} files'.format(len(tiles)))
     for i, tile in enumerate(tiles):
         tile.get()
+        gc.collect()
         dt = time.time() - t0
         avg_time_per_tile = dt / (i + 1)
         eta = avg_time_per_tile * (len(tiles) - i)
