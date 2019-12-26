@@ -80,8 +80,8 @@ def get_names_and_polygons_in_workspace(workspace, settings=None, polygon_from_f
         reader = readers.LasReader(settings=file_format_settings, extension=file_format)
     elif file_format == 'txt':
         reader = readers.TxtReader(settings=file_format_settings)
-    elif file_format == 'npy':
-        reader = readers.NpyReader(settings=file_format_settings)
+    elif file_format == 'npy' or file_format == 'npz':
+        reader = readers.NpyReader(settings=file_format_settings, extension=file_format)
     else:
         raise Exception('Not supported file format')
     files = glob.glob(workspace + "/*." + reader.get_extension())
@@ -157,14 +157,15 @@ def calculate_polygons(file, polygon_from_filename_settings, settings, reader, w
     :param workspace:
     :return:
     """
-    filename = file.split('/')[-1]
-    filename = filename.split('.')[0]
+    f0 = file.split('/')[-1]
+    filename = f0.split('.')[0]
+    extension = f0.split('.')[1]
 
     if polygon_from_filename_settings is not None:
         step, x_pos, y_pos = get_polygon_from_file_settings(settings)
         polygon = calculate_polygon_from_filename(filename, step, x_pos, y_pos)
     else:
-        points = reader.get_points(workspace + filename + '.laz')
+        points = reader.get_points(workspace + filename + '.' + extension)
         if np.shape(points)[0] < 3:
             print('Skipping (not enough points)')
             polygon = None
@@ -619,7 +620,7 @@ def create_and_save_kd_tree_for_cloud(cloud, leaf_size=50):
     if not exists(tree_path):
         makedirs(tree_path)
 
-    pool = mp.Pool(mp.cpu_count()-1)
+    pool = mp.Pool(mp.cpu_count() - 2)
     tiles = [pool.apply_async(create_and_save_kd_tree_for_tile, args=(tile, tree_path, leaf_size,)) for _, tile in cloud.get_tiles().items()]
 
     t0 = time.time()

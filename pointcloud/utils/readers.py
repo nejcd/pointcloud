@@ -263,11 +263,14 @@ class NpyReader(object):
         self.extension = extension
         self.path = path
 
-        filename = Path(path)
-        if filename.suffix == '.' + self.extension:
-            self.filename = filename
+        if path is not None:
+            filename = Path(path)
+            if filename.suffix == '.' + self.extension:
+                self.filename = filename
+            else:
+                self.filename = filename.with_suffix('.' + self.extension)
         else:
-            self.filename = filename.with_suffix('.' + self.extension)
+            self.filename = None
         self.points = [0, 1, 2]
         self.features = [3, 4, 5]
         self.labels = [6]

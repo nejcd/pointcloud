@@ -62,6 +62,24 @@ def remove_label(points, labels, label, features=None):
     return points[remove], labels[remove], fout
 
 
+def filter_by_label(points, labels, label, features=None):
+    """
+    :param points:
+    :param features:
+    :param labels:
+    :param label:
+    :return:
+    """
+    keep = np.array([labels == label])
+
+    if features is not None:
+        fout = features[keep]
+    else:
+        fout = None
+
+    return points[keep], labels[keep], fout
+
+
 def scale_points(points, scale):
     """
     Scales Points
@@ -259,7 +277,7 @@ def remap_labels(labels, mappings):
     return labels
 
 
-def point_count_per_class(labels, number_of_classes=100):
+def point_count_per_label(labels, number_of_classes=100):
     """
 
     :return:
