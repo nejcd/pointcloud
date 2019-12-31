@@ -292,5 +292,14 @@ def point_count_per_label(labels, number_of_classes=100):
     return fq
 
 
-def test():
-    print('Hello from Python')
+def point_count_per_class(labels, number_of_classes=100):
+    """
+
+    :return:
+    """
+
+    fq = np.zeros(number_of_classes)
+    for label in labels:
+        fq[label] += 1
+
+    return fq

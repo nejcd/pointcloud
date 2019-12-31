@@ -282,18 +282,18 @@ class NpyReader(object):
     def get_extension(self):
         return self.extension
 
-    @functools.lru_cache(maxsize=_cache_size)
+    # @functools.lru_cache(maxsize=_cache_size)
     def load_data(self, path):
         """
         :param path:
         :return:
         """
         data = np.load(path)
-
+        d = data
         if self.extension == 'npz':
-            data = data['pc']
-
-        return data
+            d = data['pc']
+        data.close()
+        return d
 
     def get_all(self, path=None):
         """

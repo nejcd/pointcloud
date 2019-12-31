@@ -2,6 +2,7 @@ import multiprocessing as mp
 import sys
 import gc
 import geojson
+import json
 import glob
 import math
 import matplotlib.pyplot as plt
@@ -672,14 +673,36 @@ def calculate_single_tile_stats(tile):
     TODO this should be also exploded into per tiles functions
     :return:
     """
-    print('Calculating stats for tile {:}'.format(tile.get_name()))
-    points, labels, features = tile.get_all()
-    tile.set_number_of_points(len(points))
-    point_count_per_class = processing.point_count_per_class(labels.astype(int))
-    return round(tile.get_area(), 2), tile.get_number_of_points(), point_count_per_class
+    try:
+        points, labels, features = tile.get_all()
+        tile.set_number_of_points(len(points))
+        point_count_per_class = processing.point_count_per_class(labels.astype(int))
+        return round(tile.get_area(), 2), tile.get_number_of_points(), point_count_per_class
+    except Exception:
+        print('Could not read tile {:}'.format(tile.get_name()))
+        return 0, 0, [0, 0]
 
 
-def calulcate_stats(pointcloud):
+def read_or_calculate_tile_stats(tile):
+    """
+
+    :param tile:
+    :return:
+    """
+    stats_file = "{:}/{:}_stats.pkl".format(tile.get_workspace(),tile.get_name())
+    if os.path.isfile(stats_file):
+        with open(stats_file, 'rb') as f:
+            data = pickle.load(f)
+            return data['area'], data['number_of_points'], data['point_count_per_class']
+
+    area, nop, pcpc = calculate_single_tile_stats(tile)
+    with open(stats_file, 'wb') as outfile:
+        data = {'area': area, 'number_of_points': nop, 'point_count_per_class': pcpc}
+        pickle.dump(data, outfile)
+    return area, nop, pcpc
+
+
+def read_or_calculate_stats(pointcloud):
     """
     :type pointcloud: PointCloud
     :return:
@@ -688,22 +711,51 @@ def calulcate_stats(pointcloud):
     stats = {}
     fq = {}
     pool = mp.Pool(mp.cpu_count())
-    tile_stats_async = [pool.apply_async(calculate_single_tile_stats, args=(tile,)) for n, tile in tiles.items()]
+    tile_stats_async = [pool.apply_async(read_or_calculate_tile_stats, args=(tile,)) for n, tile in tiles.items()]
     pool.close()
     stats['area'] = 0
     stats['num_points'] = 0
-    for tile_stat_async in tile_stats_async:
+
+    t0 = time.time()
+    for i, tile_stat_async in enumerate(tile_stats_async):
         tile_stat = tile_stat_async.get()
         stats['area'] += tile_stat[0]
         stats['num_points'] += tile_stat[1]
         f = tile_stat[2]
-        for c, count in f.items():
+        for c, count in enumerate(f):
             if c in fq:
                 fq[int(c)] += count
             else:
                 fq[int(c)] = count
+
+        dt = time.time() - t0
+        avg_time_per_tile = dt / (i + 1)
+        eta = avg_time_per_tile * (len(tiles) - i)
+        sys.stdout.write('\rProcessing {:}/{:}; total time: {:.2f} min; awg_tile: {:.2f} min; ETA: {:.2f} min\n'.
+                         format(i + 1, len(tiles), dt/60, avg_time_per_tile/60, eta/60))
+        sys.stdout.flush()
+
     stats['tiles'] = len(tiles)
     stats['density'] = round(stats['num_points'] / (stats['area'] + 1e-9), 2)
     stats['class_frequency'] = fq
     print('Done')
     return stats
+
+
+def remove_tiles_without_files(cloud):
+
+    c = 0
+    t_c = len(cloud.get_tiles())
+    remove = []
+    for tile_name, tile in cloud.get_tiles().items():
+
+        if not os.path.isfile(cloud.get_workspace() / (tile_name + '.' + tile.get_file_format())):
+            remove.append(tile_name)
+            c += 1
+    for t in remove:
+        cloud.remove_tile(t)
+
+    print('Removed {:} of total {:} tile.'.format(c, t_c))
+
+    return cloud
+

@@ -47,6 +47,13 @@ class Tile:
             'file_format_settings': self.file_format_settings
         }
 
+    def get_file_format(self):
+        """
+
+        :return:
+        """
+        return self.file_format
+
     def get_name(self):
         """
 
