@@ -1,11 +1,8 @@
-import multiprocessing as mp
 import random
 import sys
-from pathlib import Path
-
 import numpy as np
+from pathlib import Path
 from shapely.geometry import MultiPolygon
-
 from pointcloud.tile import Tile
 from pointcloud.utils import processing
 
@@ -35,7 +32,7 @@ class PointCloud:
             'epsg': self.epsg,
             'workspace': str(self.workspace),
             'name': self.name,
-            'stats': self.stats,
+            'stats': self.get_stats(),
             'labels_descriptions': self.labels_descriptions,
             'file_format_settings': self.file_format_settings,
             'file_format': self.file_format,
@@ -201,6 +198,11 @@ class PointCloud:
         return self.stats
 
     def set_stats(self, stats):
+        """
+
+        :param stats:
+        :return:
+        """
         self.stats = stats
 
     def reset_stats(self):

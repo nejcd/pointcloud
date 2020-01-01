@@ -31,12 +31,13 @@ def load_project(project_file_path):
     with open(project_file_path, 'r') as read:
         p = json.load(read)
 
-    project = Project(project_name=p['name'], epsg=p['epsg'], workspace=p['workspace'])
+    project = Project(project_name=p['name'], epsg=p['epsg'], workspace=p['workspace'], stats=p['stats'])
 
     for c in p['pointclouds']:
-        pointcloud = PointCloud(name=c['name'], workspace=c['workspace'], file_format=c['file_format'],
+        pointcloud = PointCloud(name=c['name'], epsg=c['epsg'], workspace=c['workspace'], file_format=c['file_format'],
                                 file_format_settings=c['file_format_settings'],
                                 labels_descriptions=c.get('labels_descriptions', None))
+        pointcloud.set_stats(c['stats'])
         project.add_pointcloud(pointcloud)
         for t in c['tiles']:
             polygon = None
@@ -47,15 +48,15 @@ def load_project(project_file_path):
                         file_format=t.get('file_format', c['file_format']),
                         file_format_settings=t.get('file_format_settings', c['file_format_settings']), area=t.get('area', None),
                         density=t.get('density', None), number_of_points=t.get('number_of_points', None))
+
             pointcloud.add_tile(tile)
 
     return project
 
 
 class Project:
-    ext = 'lp'
 
-    def __init__(self, project_name, epsg=None, workspace='./'):
+    def __init__(self, project_name, epsg=None, workspace='./', stats=None):
         """
         :param project_name:
         :param epsg: 
@@ -67,7 +68,7 @@ class Project:
         self.epsg = epsg
         self.train_pointclouds = None
         self.test_pointclouds = None
-        self.stats = None
+        self.stats = stats
 
     def get_workspace(self):
         return self.workspace
@@ -199,33 +200,6 @@ class Project:
         :return:
         """
         return self.get_polygons().bounds
-
-    def can_load(self):
-        """
-        Is there saved project version
-        :return:
-        """
-        my_file = self.get_project_file_name()
-        return my_file.is_file()
-
-    def load(self):
-        """
-        Load saved project
-        :return:
-        """
-        print('\nLoading project {0}'.format(self.name))
-        f = open(self.get_project_file_name(), 'rb')
-        tmp_dict = pickle.load(f)
-        f.close()
-
-        self.__dict__.update(tmp_dict)
-        raise DeprecationWarning('Use load_project()')
-
-    def get_project_file_name(self):
-        """
-        :return:
-        """
-        return self.workspace / '{0}.{1}'.format(self.name, self.ext)
 
     def plot_project(self):
         for name, pointcloud in self.pointclouds.items():

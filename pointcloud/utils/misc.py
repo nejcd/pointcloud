@@ -731,9 +731,10 @@ def read_or_calculate_stats(pointcloud):
         dt = time.time() - t0
         avg_time_per_tile = dt / (i + 1)
         eta = avg_time_per_tile * (len(tiles) - i)
-        sys.stdout.write('\rProcessing {:}/{:}; total time: {:.2f} min; awg_tile: {:.2f} min; ETA: {:.2f} min\n'.
-                         format(i + 1, len(tiles), dt/60, avg_time_per_tile/60, eta/60))
-        sys.stdout.flush()
+        print('Processing {:}/{:}, total time: {:.2f} min;'
+              ' awg_tile: {:.2f} min; ETA: {:.2f} min'.format(i + 1, len(tiles), dt/60,
+                                                              avg_time_per_tile/60, eta/60),
+              end='\n', file=sys.stdout, flush=False)
 
     stats['tiles'] = len(tiles)
     stats['density'] = round(stats['num_points'] / (stats['area'] + 1e-9), 2)
