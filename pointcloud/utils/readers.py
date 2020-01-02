@@ -292,7 +292,7 @@ class NpyReader(object):
         d = data
         if self.extension == 'npz':
             d = data['pc']
-        data.close()
+            data.close()
         return d
 
     def get_all(self, path=None):
