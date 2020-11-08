@@ -112,7 +112,7 @@ class LasReader(object):
         _, _, features = self.load_data(path)
         return features
 
-    def store(self, points, labels=None, features=None, path=None):
+    def store(self, points, labels=None, features=None, path=None, red=None, green=None, blue=None):
         """
         :param path:
         :param points:
@@ -135,6 +135,15 @@ class LasReader(object):
 
         if features is not None:
             raise Warning('Not implemented. (Features will not be saved)')
+
+        if red is not None:
+            file_out.red = red
+
+        if green is not None:
+            file_out.green = green
+
+        if green is not None:
+            file_out.red = green
 
         # TODO THIS SHOULD GO AWAY
         file_out.header.offset = [0, 0, 0]

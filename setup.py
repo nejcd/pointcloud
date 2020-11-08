@@ -34,6 +34,7 @@ setup(
         'plyfile',
         'geojson',
         'sklearn'
+        'cython'
     ],
     scripts=[
     ],
