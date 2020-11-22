@@ -5,12 +5,12 @@ from Cython.Build import cythonize
 with open("README.md") as f:
     long_description = f.read()
 
-extensions = [
-    Extension(
-        "pointcloud.utils.processing",
-        ["pointcloud/utils/processing.pyx"],
-    ),
-]
+# extensions = [
+#     Extension(
+#         "pointcloud.utils.processing",
+#         ["pointcloud/utils/processing.pyx"],
+#     ),
+# ]
 
 setup(
     name='pointcloud',
@@ -23,7 +23,7 @@ setup(
     url='https://github.com/nejcd/pointcloud.git',
     keywords='remote sensing lidar point cloud geo spatial',
     packages=find_packages(exclude=["*tests*"]),
-    ext_modules=cythonize(extensions),
+    # ext_modules=cythonize(extensions),
     install_requires=[
         'numpy',
         'shapely',
