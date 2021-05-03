@@ -28,7 +28,7 @@ setup(
         'numpy',
         'shapely',
         'scipy',
-        'laspy',
+        'laspy==1.7.0',
         'matplotlib',
         'descartes',
         'plyfile',
